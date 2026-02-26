@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataService, SystemUser, Role } from '../../services/data.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-users-roles',
@@ -161,22 +162,63 @@ export class UsersRolesComponent {
     }
   }
 
-  removeUser(user: SystemUser): void {
-    if (!confirm(`Remove user "${user.name}" (${user.email})? This cannot be undone.`)) {
+  async removeUser(user: SystemUser): Promise<void> {
+    const result = await Swal.fire({
+      title: 'Remove user?',
+      text: `Remove user "${user.name}" (${user.email})? This cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, remove',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      focusCancel: true,
+    });
+    if (!result.isConfirmed) {
       return;
     }
     this.data.removeUser(user.id);
+    await Swal.fire({
+      title: 'Removed',
+      text: 'The user account has been deleted.',
+      icon: 'success',
+      timer: 1500,
+      showConfirmButton: false,
+    });
   }
 
-  archiveUser(user: SystemUser): void {
+  async archiveUser(user: SystemUser): Promise<void> {
     if (user.role !== 'Admin' && user.role !== 'Staff') {
-      alert('Only Admin and Staff accounts can be archived.');
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Cannot archive user',
+        text: 'Only Admin and Staff accounts can be archived.',
+        confirmButtonText: 'OK',
+      });
       return;
     }
-    if (!confirm(`Archive user "${user.name}" (${user.email})? They will move to Archives and be hidden from this list.`)) {
+
+    const result = await Swal.fire({
+      title: 'Archive user?',
+      text: `Archive user "${user.name}" (${user.email})? They will move to Archives and be hidden from this list.`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, archive',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      focusCancel: true,
+    });
+    if (!result.isConfirmed) {
       return;
     }
+
     this.data.archiveUser(user.id);
+    await Swal.fire({
+      title: 'Archived',
+      text: 'The user has been moved to Archives.',
+      icon: 'success',
+      timer: 1500,
+      showConfirmButton: false,
+    });
   }
 
   // Role modal

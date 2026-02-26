@@ -344,7 +344,7 @@
 
     /* When sidebar is open, push topbar back and blur it */
     &.top-bar--sidebar-open {
-      transform: translateX(280px);
+      transform: none; /* keep top bar fixed; avoid sideways push */
       filter: blur(4px);
       -webkit-filter: blur(4px);
     }
@@ -357,12 +357,13 @@
 
     /* Adjust transform for smaller sidebar width */
     &.top-bar--sidebar-open {
-      transform: translateX(260px);
+      transform: none; /* keep top bar fixed; avoid sideways push */
     }
   }
 }
 
 .top-bar__title {
+  flex: 1 1 auto; /* allow title to shrink so right-side icons stay put */
   margin: 0;
   margin-right: auto;
   font-size: 1.125rem;
@@ -386,6 +387,13 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
   }
+}
+
+/* Ensure right-side controls don’t get squeezed or pushed when space is tight */
+.top-bar .theme-toggle,
+.top-bar__bell-slot,
+.top-bar .profile-menu {
+  flex: 0 0 auto;
 }
 
 .top-bar__bell-slot {

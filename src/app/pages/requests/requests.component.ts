@@ -10,7 +10,41 @@ import Swal from 'sweetalert2';
   standalone: true,
   imports: [CommonModule, RouterLink],
   templateUrl: './requests.component.html',
-  styles: ['.muted { color: var(--color-text-muted); } .table { margin-top: 1rem; }'],
+  styles: [
+    `
+      .muted {
+        color: var(--color-text-muted);
+      }
+
+      .table {
+        margin-top: 1rem;
+      }
+
+      .table th:last-child {
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      .actions-cell {
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      .actions-cell__buttons {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.5rem;
+      }
+
+      /* Avoid double horizontal scrollbars on mobile for this page */
+      .requests-page .table-wrap {
+        overflow-x: auto;
+        margin: 0;
+        padding: 0;
+      }
+    `,
+  ],
 })
 export class RequestsComponent {
   constructor(public data: DataService, public auth: AuthService) {}

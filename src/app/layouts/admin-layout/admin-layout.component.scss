@@ -72,13 +72,13 @@
     top: 0;
     left: 0;
     bottom: 0;
-    z-index: 999;
+    z-index: 1001; /* keep sidebar above top bar during open/close animation */
     transform: translateX(-100%);
     box-shadow: var(--shadow-lg);
 
     &.sidebar--open {
       transform: translateX(0);
-      z-index: 1001; /* above top bar so sidebar isn’t overlapped when open */
+      /* base z-index already above top bar */
     }
   }
 
@@ -631,7 +631,8 @@ button.theme-toggle {
     transform 0.15s ease-out,
     box-shadow 0.15s ease-out,
     background 0.15s ease-out,
-    filter 0.15s ease-out;
+    filter 0.15s ease-out,
+    opacity 0.15s ease-out;
 
   &:hover {
     transform: translateY(-2px) scale(1.03);
@@ -651,6 +652,15 @@ button.theme-toggle {
     padding: 0.65rem 1rem;
     font-size: 0.875rem;
   }
+}
+
+.fab--sidebar-open {
+  z-index: 900; /* keep behind sidebar/backdrop, but still clearly visible */
+  pointer-events: none; /* avoid clicks while menu is open */
+  /* Blur only when sidebar is open; do not fade it out */
+  filter: blur(4px) brightness(0.9);
+  opacity: 1;
+  transform: translateY(2px);
 }
 
 .fab__icon {

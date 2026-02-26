@@ -32,6 +32,8 @@ export class UsersRolesComponent {
   modalDescription = '';
   modalPermissions: string[] = [];
   newPermission = '';
+  isRoleModalClosing = false;
+  private roleModalCloseTimeout: ReturnType<typeof setTimeout> | null = null;
 
   newUser: Partial<SystemUser> & { firstName?: string; middleName?: string; lastName?: string } = {
     firstName: '',
@@ -223,20 +225,36 @@ export class UsersRolesComponent {
 
   // Role modal
   openRoleModal(role: Role, mode: 'role' | 'permissions' = 'role'): void {
+    if (this.roleModalCloseTimeout) {
+      clearTimeout(this.roleModalCloseTimeout);
+      this.roleModalCloseTimeout = null;
+    }
+
     this.activeRole = role;
     this.modalMode = mode;
     this.modalDescription = role.description;
     this.modalPermissions = [...role.permissions];
     this.newPermission = '';
+    this.isRoleModalClosing = false;
     this.showRoleModal = true;
   }
 
   closeRoleModal(): void {
-    this.showRoleModal = false;
-    this.activeRole = null;
-    this.modalDescription = '';
-    this.modalPermissions = [];
-    this.newPermission = '';
+    if (!this.showRoleModal || this.isRoleModalClosing) {
+      return;
+    }
+
+    this.isRoleModalClosing = true;
+
+    this.roleModalCloseTimeout = setTimeout(() => {
+      this.showRoleModal = false;
+      this.isRoleModalClosing = false;
+      this.activeRole = null;
+      this.modalDescription = '';
+      this.modalPermissions = [];
+      this.newPermission = '';
+      this.roleModalCloseTimeout = null;
+    }, 200);
   }
 
   saveRoleModal(): void {

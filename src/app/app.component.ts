@@ -475,6 +475,8 @@ export class AppComponent implements OnInit, OnDestroy {
       && !url.startsWith('/forgot-password')
       && !url.startsWith('/reset-password')
       && !url.includes('/settings')
+      && !url.includes('/residents/add')
+      && !url.includes('/households/add')
       && !(url.includes('/households/') && url.includes('/edit'))
       && !isResidentProfilePage
       && !isStaffRequestDetailPage

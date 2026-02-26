@@ -263,7 +263,7 @@
   flex: 1;
   position: relative;
   padding: 1.5rem;
-  padding-top: calc(72px + 8px); /* top bar height + small gap */
+  padding-top: calc(72px + 24px); /* top bar height + slightly larger gap */
   overflow: auto;
 
   ::ng-deep router-outlet + * {
@@ -271,17 +271,17 @@
   }
 
   @media (max-width: 1023px) {
-    padding-top: calc(72px + 6px);
+    padding-top: calc(72px + 20px);
   }
 
   @media (max-width: 768px) {
     padding: 1rem;
-    padding-top: calc(72px + 6px);
+    padding-top: calc(72px + 20px);
   }
 
   @media (max-width: 640px) {
     padding: 0.5rem 0.75rem;
-    padding-top: calc(68px + 6px);
+    padding-top: calc(68px + 20px);
   }
 }
 

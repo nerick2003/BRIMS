@@ -165,7 +165,7 @@
           @if (auth.profilePicture$ | async; as profilePic) {
             <img [src]="profilePic" alt="" class="profile-menu__avatar" />
           } @else {
-            <img src="/assets/images/default-avatar.png" alt="" class="profile-menu__avatar" />
+            <span class="profile-menu__avatar profile-menu__avatar-placeholder" aria-hidden="true">👤</span>
           }
         </button>
         @if (isProfileMenuOpen) {

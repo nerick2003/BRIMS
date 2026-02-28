@@ -475,7 +475,8 @@ export class AppComponent implements OnInit, OnDestroy {
     // Check if the currently activated route is the 404 / wildcard route
     const isNotFoundRoute = this.isNotFoundRouteSnapshot(this.router.routerState.snapshot.root);
     
-    this.showGlobalUi = !url.startsWith('/login') 
+    this.showGlobalUi = !url.startsWith('/login')
+      && !url.startsWith('/contact')
       && !url.startsWith('/forgot-password')
       && !url.startsWith('/reset-password')
       && !url.includes('/settings')

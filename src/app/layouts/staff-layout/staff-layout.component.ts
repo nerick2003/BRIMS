@@ -143,7 +143,7 @@ export class StaffLayoutComponent implements OnInit, AfterViewInit, OnDestroy {
     if (result.isConfirmed) {
       this.auth.logout();
       this.router.navigate(['/login']);
-      this.alert.success('Logged out', 'You have been logged out.');
+      this.alert.successToast('Logged out', 'You have been logged out.', 1000);
     }
   }
 

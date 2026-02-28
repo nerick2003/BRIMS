@@ -37,36 +37,50 @@ export class QrScannerComponent implements OnInit, OnDestroy {
   }
 
   async requestCameraPermission() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      // Permission granted, stop the test stream
-      stream.getTracks().forEach(track => track.stop());
-      this.hasPermission = true;
-      this.scannerEnabled = true;
-    } catch (error: any) {
-      this.hasPermission = false;
-      const errorName = error?.name || '';
-      if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
-        this.scanError = 'Camera permission denied. Please enable camera access in your browser settings.';
-      } else if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
-        this.scanError = 'No camera found. Please connect a camera device.';
-      } else if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
-        this.scanError = 'Camera is already in use by another application.';
-      } else {
-        this.scanError = 'Unable to access camera. Please check your browser settings.';
+    const strategies: MediaStreamConstraints[] = [
+      { video: true },
+      { video: { facingMode: 'user' } },
+      { video: { facingMode: 'environment' } },
+      { video: { width: { ideal: 1280 }, height: { ideal: 720 } } },
+    ];
+
+    for (const constraints of strategies) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        stream.getTracks().forEach(track => track.stop());
+        this.hasPermission = true;
+        this.scannerEnabled = true;
+        this.scanError = null;
+        return;
+      } catch (error: any) {
+        const errorName = error?.name || '';
+        if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
+          this.hasPermission = false;
+          this.scanError = 'Camera permission denied. Please enable camera access in your browser settings.';
+          return;
+        }
+        if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
+          continue;
+        }
+        if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
+          this.hasPermission = false;
+          this.scanError = 'Camera is already in use by another application.';
+          return;
+        }
       }
     }
+
+    this.hasPermission = false;
+    this.scanError = this.scanError || 'No camera found. Try closing other apps using the camera, or use Chrome settings (chrome://settings/content/camera) to select your webcam.';
   }
 
   onCamerasFound(devices: MediaDeviceInfo[]): void {
-    this.availableDevices = devices;
-    // Prefer back camera on mobile devices
-    const backCamera = devices.find(device => 
-      device.label.toLowerCase().includes('back') || 
-      device.label.toLowerCase().includes('rear') ||
-      device.label.toLowerCase().includes('environment')
+    this.availableDevices = devices.filter(d => d.kind === 'videoinput');
+    const label = (d: MediaDeviceInfo) => (d.label || '').toLowerCase();
+    const backCamera = this.availableDevices.find(d =>
+      label(d).includes('back') || label(d).includes('rear') || label(d).includes('environment')
     );
-    this.selectedDevice = backCamera || devices[0] || undefined;
+    this.selectedDevice = backCamera || this.availableDevices[0] || undefined;
   }
 
   onDeviceSelectChange(deviceId: string) {

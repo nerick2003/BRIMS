@@ -126,7 +126,7 @@ import { NotificationTypeLabelPipe } from './services/notification-type-label.pi
         color: var(--color-text);
         box-shadow: var(--shadow-lg);
         cursor: pointer;
-        transition: background 0.2s, transform 0.05s;
+        transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.25s ease, border-color 0.2s ease;
         
         @media (max-width: 640px) {
           width: 40px;
@@ -136,10 +136,14 @@ import { NotificationTypeLabelPipe } from './services/notification-type-label.pi
 
       .global-notifications__bell:hover {
         background: var(--color-bg);
+        box-shadow: var(--shadow-lg), 0 0 0 2px var(--color-border);
+        transform: scale(1.06);
+        border-color: var(--color-text-muted, rgba(0, 0, 0, 0.2));
       }
 
       .global-notifications__bell:active {
-        transform: translateY(1px);
+        transform: scale(0.97);
+        box-shadow: var(--shadow);
       }
 
       .global-notifications__icon {

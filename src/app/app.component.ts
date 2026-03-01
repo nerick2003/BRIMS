@@ -146,6 +146,17 @@ import { NotificationTypeLabelPipe } from './services/notification-type-label.pi
         box-shadow: var(--shadow);
       }
 
+      /* When SweetAlert2 is open (e.g. logout confirm), remove focus/hover highlight from bell */
+      :host-context(body.swal2-shown) .global-notifications__bell:hover,
+      :host-context(body.swal2-shown) .global-notifications__bell:focus,
+      :host-context(body.swal2-shown) .global-notifications__bell:focus-visible {
+        outline: none;
+        box-shadow: var(--shadow-lg);
+        transform: scale(1);
+        border-color: var(--color-border);
+        background: var(--color-bg-card);
+      }
+
       .global-notifications__icon {
         font-size: 1.25rem;
         line-height: 1;

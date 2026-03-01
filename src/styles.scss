@@ -53,7 +53,7 @@
   --sidebar-scrollbar-thumb-hover: rgba(255, 255, 255, 0.4);
 
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-family-title: 'Plus Jakarta Sans', var(--font-family);
+  --font-family-title: 'Sora', var(--font-family);
   --radius: 8px;
   --radius-lg: 12px;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -334,6 +334,16 @@ a {
 }
 
 /* SweetAlert2 - match BRIMS look & feel */
+@keyframes swal-btn-pulse {
+  0%,
+  100% {
+    transform: translateY(-1px) scale(1);
+  }
+  50% {
+    transform: translateY(-1px) scale(1.02);
+  }
+}
+
 .swal2-popup {
   border-radius: var(--radius-lg);
   background: var(--color-bg-card);
@@ -364,6 +374,9 @@ a {
   font-weight: 500;
   font-size: 0.9375rem;
   box-shadow: none;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease,
+    transform 0.15s ease, box-shadow 0.2s ease;
 }
 
 .swal2-styled:focus {
@@ -377,6 +390,14 @@ a {
 
 .swal2-styled.swal2-confirm:hover {
   background: var(--color-primary-dark);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+  animation: swal-btn-pulse 1.5s ease-in-out infinite;
+}
+
+.swal2-styled.swal2-confirm:active {
+  animation: none;
+  transform: translateY(0) scale(1);
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.25);
 }
 
 .swal2-styled.swal2-cancel {
@@ -388,6 +409,15 @@ a {
 .swal2-styled.swal2-cancel:hover {
   background: var(--color-bg-secondary);
   color: var(--color-text);
+  border-color: var(--color-text-muted);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  animation: swal-btn-pulse 1.5s ease-in-out infinite;
+}
+
+.swal2-styled.swal2-cancel:active {
+  animation: none;
+  transform: translateY(0) scale(1);
+  box-shadow: none;
 }
 
 /* Dropdown / select - consistent look across the app (!important so component styles don't hide arrow) */
@@ -626,6 +656,7 @@ select.household-map-filter-group__input {
 }
 
 .page-title {
+  font-family: var(--font-family-title);
   font-size: 1.875rem;
   font-weight: 700;
   margin-bottom: 1.5rem;
@@ -767,6 +798,16 @@ select.household-map-filter-group__input {
   body.sidebar-open .global-notifications {
     transform: none; /* avoid sideways push */
   }
+}
+
+/* When SweetAlert2 modal is open (e.g. logout confirm), don't show focus highlight on notification bell */
+body.swal2-shown .global-notifications__bell:focus,
+body.swal2-shown .global-notifications__bell:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-lg);
+  transform: scale(1);
+  border-color: var(--color-border);
+  background: var(--color-bg-card);
 }
 
 /* Floating action button (add) - lower right, shown on list pages */

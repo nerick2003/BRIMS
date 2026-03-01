@@ -341,7 +341,13 @@ export class AuthService {
   }
 
   private generateResetToken(): string {
-    // Simple token generation for demo (in production, use crypto.randomBytes or similar)
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    // Cryptographically secure token (browser crypto.subtle / getRandomValues)
+    const array = new Uint8Array(32);
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      crypto.getRandomValues(array);
+    } else {
+      for (let i = 0; i < array.length; i++) array[i] = Math.floor(Math.random() * 256);
+    }
+    return Array.from(array, (b) => b.toString(16).padStart(2, '0')).join('');
   }
 }

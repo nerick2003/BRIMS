@@ -18,6 +18,7 @@ export class QrScannerComponent implements OnInit, OnDestroy {
   availableDevices: MediaDeviceInfo[] = [];
   selectedDevice: MediaDeviceInfo | undefined = undefined;
   scanResult: string | null = null;
+  scanResultUrl: string | null = null;
   scanError: string | null = null;
   allowedFormats = [BarcodeFormat.QR_CODE];
   torchEnabled = false;
@@ -112,8 +113,21 @@ export class QrScannerComponent implements OnInit, OnDestroy {
     this.torchEnabled = !this.torchEnabled;
   }
 
+  private openRouteInNewTab(commands: any[]): void {
+    if (typeof window === 'undefined') {
+      this.router.navigate(commands);
+      return;
+    }
+
+    const urlTree = this.router.createUrlTree(commands);
+    const url = this.router.serializeUrl(urlTree);
+    window.open(url, '_blank');
+  }
+
   processScannedCode(code: string): void {
     try {
+      this.scanResultUrl = null;
+
       // Try to parse as JSON first (for structured QR codes)
       let parsed: any;
       try {
@@ -135,7 +149,7 @@ export class QrScannerComponent implements OnInit, OnDestroy {
               this.data.getResidentByResidentId(residentKey);
 
             if (resident) {
-              this.router.navigate([base, 'residents', resident.id]);
+              this.openRouteInNewTab([base, 'residents', resident.id]);
             } else {
               this.scanError = `Resident not found for ID "${residentKey}"`;
             }
@@ -146,7 +160,7 @@ export class QrScannerComponent implements OnInit, OnDestroy {
         if (parsed.type === 'request' && parsed.id) {
           const request = this.data.getRequestById(parsed.id);
           if (request) {
-            this.router.navigate([base, 'requests', request.id]);
+            this.openRouteInNewTab([base, 'requests', request.id]);
           } else {
             this.scanError = `Request not found for ID "${parsed.id}"`;
           }
@@ -157,7 +171,7 @@ export class QrScannerComponent implements OnInit, OnDestroy {
           // Certificates currently reuse request IDs
           const request = this.data.getRequestById(parsed.id);
           if (request) {
-            this.router.navigate([base, 'requests', request.id]);
+            this.openRouteInNewTab([base, 'requests', request.id]);
           } else {
             this.scanError = `Certificate not found for ID "${parsed.id}"`;
           }
@@ -165,11 +179,40 @@ export class QrScannerComponent implements OnInit, OnDestroy {
         }
       }
 
-      // Handle simple resident identifiers (either internal id or residentId)
+      // Handle simple resident identifiers or URL-like codes
+      const trimmedCode = code.trim();
+
+      // Try to interpret the scanned code as a URL
+      let urlToOpen: string | null = null;
+
+      // Already a full http/https URL
+      if (/^https?:\/\/\S+/i.test(trimmedCode)) {
+        urlToOpen = trimmedCode;
+      }
+      // Starts with www. or looks like a domain (e.g. example.com/path)
+      else if (
+        /^www\.\S+/i.test(trimmedCode) ||
+        /^[a-z0-9.-]+\.[a-z]{2,}(\S*)?$/i.test(trimmedCode)
+      ) {
+        urlToOpen = `https://${trimmedCode}`;
+      }
+
+      if (urlToOpen) {
+        this.scanResultUrl = urlToOpen;
+        if (typeof window !== 'undefined') {
+          try {
+            window.open(urlToOpen, '_blank');
+          } catch {
+            // If the browser blocks the popup, the user can still click the link in the UI.
+          }
+        }
+        return;
+      }
+
       const residentFromId =
         this.data.getResidentById(code) || this.data.getResidentByResidentId(code);
       if (residentFromId) {
-        this.router.navigate([base, 'residents', residentFromId.id]);
+        this.openRouteInNewTab([base, 'residents', residentFromId.id]);
         return;
       }
 
@@ -178,7 +221,7 @@ export class QrScannerComponent implements OnInit, OnDestroy {
         const requestId = code.replace(/^(REQ-|req-)/i, '');
         const request = this.data.getRequestById(requestId);
         if (request) {
-          this.router.navigate([base, 'requests', request.id]);
+          this.openRouteInNewTab([base, 'requests', request.id]);
         } else {
           this.scanError = `Request not found for ID "${requestId}"`;
         }
@@ -194,6 +237,7 @@ export class QrScannerComponent implements OnInit, OnDestroy {
 
   resetScanner(): void {
     this.scanResult = null;
+    this.scanResultUrl = null;
     this.scanError = null;
     this.scannerEnabled = true;
   }

@@ -103,7 +103,26 @@
       </div>
       <div class="scan-result__content">
         <p class="scan-result__code">{{ scanResult }}</p>
-        @if (scanError) {
+        @if (scanResultUrl) {
+          <p class="scan-result__success">
+            This looks like a link:
+            <a
+              [href]="scanResultUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ scanResultUrl }}
+            </a>
+          </p>
+          <a
+            class="btn btn--primary btn--sm"
+            [href]="scanResultUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open link in new tab
+          </a>
+        } @else if (scanError) {
           <p class="scan-result__error">{{ scanError }}</p>
         } @else {
           <p class="scan-result__success">Processing...</p>

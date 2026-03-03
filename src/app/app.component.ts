@@ -485,10 +485,13 @@ export class AppComponent implements OnInit, OnDestroy {
     // Hide on login page, forgot password page, reset password page, settings page,
     // resident profile, request details page, QR scanner page, 404 error page,
     // and the full-screen household map page (maximize map space).
-    const isStaffRequestDetailPage = url.startsWith('/staff/requests/') && url !== '/staff/requests';
-    const isResidentProfilePage = /^\/staff\/residents\/[^/]+$/.test(url); // e.g. /staff/residents/1
+    const isStaffOrAdminRequestDetailPage =
+      /^\/(staff|admin)\/requests\/[^/]+$/.test(url); // e.g. /staff/requests/1 or /admin/requests/1
+    const isResidentProfilePage =
+      /^\/(staff|admin)\/residents\/[^/]+$/.test(url); // e.g. /staff/residents/1 or /admin/residents/1
     const isQrScannerPage = url.includes('/qr-scanner');
-    const isHouseholdMapPage = url.startsWith('/staff/households/map');
+    const isHouseholdMapPage =
+      /^\/(staff|admin)\/households\/map/.test(url); // e.g. /staff/households/map or /admin/households/map
     
     // Check if the currently activated route is the 404 / wildcard route
     const isNotFoundRoute = this.isNotFoundRouteSnapshot(this.router.routerState.snapshot.root);
@@ -502,7 +505,7 @@ export class AppComponent implements OnInit, OnDestroy {
       && !url.includes('/households/add')
       && !(url.includes('/households/') && url.includes('/edit'))
       && !isResidentProfilePage
-      && !isStaffRequestDetailPage
+      && !isStaffOrAdminRequestDetailPage
       && !isQrScannerPage
       && !isHouseholdMapPage
       && !isNotFoundRoute;

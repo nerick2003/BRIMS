@@ -25,7 +25,7 @@ export class AuthService {
     private data: DataService,
     private audit: AuditLogService,
   ) {
-    const raw = sessionStorage.getItem(this.STORAGE_KEY);
+    const raw = localStorage.getItem(this.STORAGE_KEY);
     if (raw) {
       try {
         const user = JSON.parse(raw) as User;
@@ -77,7 +77,7 @@ export class AuthService {
         email: resident.email ?? normalizedEmail,
         role: 'resident',
       };
-      sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
       this.currentProfilePicture$.next(resident.profilePicture ?? this.getStoredProfilePicture(user.id));
       this.audit.log({
         action: 'Login',
@@ -105,7 +105,7 @@ export class AuthService {
         email: staffOrAdmin.email,
         role,
       };
-      sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
       this.currentProfilePicture$.next(staffOrAdmin.profilePicture ?? this.getStoredProfilePicture(user.id));
       this.audit.log({
         action: 'Login',
@@ -121,7 +121,7 @@ export class AuthService {
     // 3. Fallback: demo accounts with fixed default passwords
     if (normalizedEmail === 'staff@barangay.gov' && pwd === 'staff123') {
       const user: User = { id: '1', name: 'Staff User', email: normalizedEmail, role: 'staff' };
-      sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
       this.currentProfilePicture$.next(this.getStoredProfilePicture(user.id));
       this.audit.log({
         action: 'Login',
@@ -135,7 +135,7 @@ export class AuthService {
     }
     if (normalizedEmail === 'admin@barangay.gov' && pwd === 'admin123') {
       const user: User = { id: '4', name: 'Admin User', email: normalizedEmail, role: 'admin' };
-      sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
       this.currentProfilePicture$.next(this.getStoredProfilePicture(user.id));
       this.audit.log({
         action: 'Login',
@@ -149,7 +149,7 @@ export class AuthService {
     }
     if (normalizedEmail === 'resident@email.com' && pwd === 'resident123') {
       const user: User = { id: '1', name: 'Juan Dela Cruz', email: normalizedEmail, role: 'resident' };
-      sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
       this.currentProfilePicture$.next(this.getStoredProfilePicture(user.id));
       this.audit.log({
         action: 'Login',
@@ -177,19 +177,29 @@ export class AuthService {
         details: 'User logged out',
       });
     }
-    sessionStorage.removeItem(this.STORAGE_KEY);
+    localStorage.removeItem(this.STORAGE_KEY);
+    // Also clear any legacy sessionStorage value if present
+    try {
+      sessionStorage.removeItem(this.STORAGE_KEY);
+    } catch {
+      // ignore
+    }
     this.currentProfilePicture$.next(null);
     this.theme.setTheme('light');
   }
 
   get currentUser(): User | null {
-    const raw = sessionStorage.getItem(this.STORAGE_KEY);
+    const raw = localStorage.getItem(this.STORAGE_KEY);
     if (!raw) return null;
     try {
       return JSON.parse(raw) as User;
     } catch {
       // If stored data is corrupted, clear it to avoid runtime errors.
-      sessionStorage.removeItem(this.STORAGE_KEY);
+      try {
+        localStorage.removeItem(this.STORAGE_KEY);
+      } catch {
+        // ignore
+      }
       return null;
     }
   }

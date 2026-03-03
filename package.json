@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "api": "json-server --watch server/db.json --port 3000"
+    "api": "json-server --watch server/db.json --port 3000",
+    "seed:firestore": "node scripts/seed-firestore.js"
   },
   "private": true,
   "dependencies": {
@@ -25,6 +26,7 @@
     "@zxing/ngx-scanner": "^21.0.0",
     "chart.js": "^4.4.0",
     "firebase": "^12.10.0",
+    "firebase-admin": "^13.7.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.0",
     "leaflet": "^1.9.4",

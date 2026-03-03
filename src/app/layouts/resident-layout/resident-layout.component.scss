@@ -12,9 +12,10 @@
   z-index: 1000;
   width: 44px;
   height: 44px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--sidebar-border);
   border-radius: var(--radius);
-  background: var(--color-bg-card);
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
   box-shadow: var(--shadow);
   cursor: pointer;
   align-items: center;
@@ -387,8 +388,6 @@
        doesn't overlap with the slide-in sidebar menu. */
     &.top-bar--sidebar-open {
       transform: none; /* keep top bar fixed; avoid sideways push */
-      filter: blur(4px);
-      -webkit-filter: blur(4px);
       opacity: 0;
       pointer-events: none;
       z-index: 0; /* move behind sidebar/backdrop */
@@ -719,6 +718,14 @@
     padding: 0.65rem 1rem;
     font-size: 0.875rem;
   }
+}
+
+.fab--sidebar-open {
+  z-index: 900; /* sit behind sidebar/backdrop */
+  pointer-events: none; /* avoid clicks while menu is open */
+  opacity: 0; /* hide while sidebar is open */
+  transform: translateY(6px) scale(0.96);
+  filter: blur(2px);
 }
 
 .fab__icon {

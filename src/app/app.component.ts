@@ -423,9 +423,6 @@ export class AppComponent implements OnInit, OnDestroy {
     private router: Router,
     private notificationsService: NotificationService,
   ) {
-    const initialPath = typeof window !== 'undefined' ? window.location.pathname : this.router.url;
-    this.updateGlobalUi(initialPath);
-
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
         this.updateGlobalUi(event.urlAfterRedirects);

@@ -118,8 +118,8 @@ export class AuthService {
       return { success: true, role };
     }
 
-    // 3. Fallback: demo accounts (any password) for first-time use
-    if (normalizedEmail === 'staff@barangay.gov' && pwd) {
+    // 3. Fallback: demo accounts with fixed default passwords
+    if (normalizedEmail === 'staff@barangay.gov' && pwd === 'staff123') {
       const user: User = { id: '1', name: 'Staff User', email: normalizedEmail, role: 'staff' };
       sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
       this.currentProfilePicture$.next(this.getStoredProfilePicture(user.id));
@@ -133,7 +133,7 @@ export class AuthService {
       });
       return { success: true, role: 'staff' };
     }
-    if (normalizedEmail === 'admin@barangay.gov' && pwd) {
+    if (normalizedEmail === 'admin@barangay.gov' && pwd === 'admin123') {
       const user: User = { id: '4', name: 'Admin User', email: normalizedEmail, role: 'admin' };
       sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
       this.currentProfilePicture$.next(this.getStoredProfilePicture(user.id));
@@ -147,7 +147,7 @@ export class AuthService {
       });
       return { success: true, role: 'admin' };
     }
-    if (normalizedEmail === 'resident@email.com' && pwd) {
+    if (normalizedEmail === 'resident@email.com' && pwd === 'resident123') {
       const user: User = { id: '1', name: 'Juan Dela Cruz', email: normalizedEmail, role: 'resident' };
       sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
       this.currentProfilePicture$.next(this.getStoredProfilePicture(user.id));

@@ -113,6 +113,16 @@ import { NotificationTypeLabelPipe } from './services/notification-type-label.pi
         }
       }
 
+      /* When the sidebar drawer is open on laptop/mobile, hide the bell completely
+         and move it behind the drawer so it can't be clicked. */
+      :host-context(body.sidebar-open) .global-notifications {
+        filter: blur(4px);
+        -webkit-filter: blur(4px);
+        opacity: 0;
+        pointer-events: none;
+        z-index: 0;
+      }
+
       .global-notifications__bell {
         position: relative;
         display: inline-flex;

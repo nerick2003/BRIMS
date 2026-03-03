@@ -72,7 +72,13 @@ export class LoginComponent implements OnInit {
       } catch {
         // ignore
       }
-      const base = r.role === 'admin' ? '/admin' : r.role === 'staff' ? '/staff' : '/resident';
+      // Navigate directly to the dashboard for the logged-in role
+      const base =
+        r.role === 'admin'
+          ? '/admin/dashboard'
+          : r.role === 'staff'
+          ? '/staff/dashboard'
+          : '/resident/dashboard';
       this.alert
         .successToast('Login successful', 'Welcome to BRIMS.', 1000)
         .then(() => {

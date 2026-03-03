@@ -402,11 +402,15 @@
   @media (max-width: 1439px) {
     padding-left: 72px;
 
-    /* When sidebar is open, push topbar back and blur it */
+    /* When sidebar is open on mobile, hide top bar content so it
+       doesn't overlap with the slide-in sidebar menu. */
     &.top-bar--sidebar-open {
       transform: none; /* keep top bar fixed; avoid sideways push */
       filter: blur(4px);
       -webkit-filter: blur(4px);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 0; /* move behind sidebar/backdrop */
     }
   }
 
@@ -415,9 +419,11 @@
     padding-left: 72px;
     padding-right: 20px;
 
-    /* Adjust transform for smaller sidebar width */
     &.top-bar--sidebar-open {
-      transform: none; /* keep top bar fixed; avoid sideways push */
+      transform: none;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 0;
     }
   }
 }

@@ -2,30 +2,26 @@ import { ApplicationConfig, ErrorHandler, provideZoneChangeDetection } from '@an
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
+import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
+import { provideFirestore, getFirestore } from '@angular/fire/firestore';
 import { routes } from './app.routes';
 import { ErrorHandlerService } from './services/error-handler.service';
 import { httpErrorInterceptor } from './interceptors/http-error.interceptor';
 import { DATABASE_SERVICE } from './services/database.interface';
-import { LocalStorageDatabaseService } from './services/local-storage-database.service';
-import { JsonServerDatabaseService } from './services/json-server-database.service';
-// import { FirebaseDatabaseService } from './services/firebase-database.service';
-
-/** Use JSON Server (run `npm run api`) or LocalStorage. Switch to Firebase when ready. */
-const USE_JSON_SERVER = true;
+import { FirebaseDatabaseService } from './services/firebase-database.service';
+import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
+    provideFirebaseApp(() => initializeApp(environment.firebase)),
+    provideFirestore(() => getFirestore()),
     provideHttpClient(
       withInterceptors([httpErrorInterceptor])
     ),
     provideCharts(withDefaultRegisterables()),
     { provide: ErrorHandler, useClass: ErrorHandlerService },
-    {
-      provide: DATABASE_SERVICE,
-      useClass: USE_JSON_SERVER ? JsonServerDatabaseService : LocalStorageDatabaseService,
-    },
-    // When Firebase is ready: useClass: FirebaseDatabaseService
+    { provide: DATABASE_SERVICE, useClass: FirebaseDatabaseService },
   ],
 };

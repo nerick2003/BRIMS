@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["src/app/pages/requests/requests.component.ts"],
-  "sourcesContent": ["\n      .muted {\n        color: var(--color-text-muted);\n      }\n\n      .table {\n        margin-top: 1rem;\n      }\n\n      .table th:last-child {\n        text-align: left;\n        white-space: nowrap;\n      }\n\n      .actions-cell {\n        text-align: left;\n        white-space: nowrap;\n      }\n\n      .actions-cell__buttons {\n        display: inline-flex;\n        align-items: center;\n        justify-content: flex-end;\n        gap: 0.5rem;\n      }\n\n      /* Avoid double horizontal scrollbars on mobile for this page */\n      .requests-page .table-wrap {\n        overflow-x: auto;\n        margin: 0;\n        padding: 0;\n      }\n    "],
-  "mappings": ";AACM,CAAA;AACE,SAAA,IAAA;;AAGF,CAAA;AACE,cAAA;;AAGF,CAJA,MAIA,EAAA;AACE,cAAA;AACA,eAAA;;AAGF,CAAA;AACE,cAAA;AACA,eAAA;;AAGF,CAAA;AACE,WAAA;AACA,eAAA;AACA,mBAAA;AACA,OAAA;;AAIF,CAAA,cAAA,CAAA;AACE,cAAA;AACA,UAAA;AACA,WAAA;;",
-  "names": []
-}

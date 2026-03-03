@@ -794,17 +794,29 @@ select.household-map-filter-group__input {
   }
 }
 
+/* On small screens, fully hide the bell while the sidebar drawer is open
+   so it doesn't overlap the slide-in menu. */
 @media (max-width: 640px) {
   body.sidebar-open .global-notifications {
-    transform: none; /* avoid sideways push */
+    transform: none;
+    opacity: 0;
+    pointer-events: none;
   }
 }
 
-/* When SweetAlert2 modal is open (e.g. logout confirm), don't show focus highlight on notification bell */
+/* When SweetAlert2 modal is open (e.g. logout/export confirm), dim + disable notification bell */
+body.swal2-shown .global-notifications {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+body.swal2-shown .global-notifications__bell,
+body.swal2-shown .global-notifications__bell:hover,
+body.swal2-shown .global-notifications__bell:active,
 body.swal2-shown .global-notifications__bell:focus,
 body.swal2-shown .global-notifications__bell:focus-visible {
   outline: none;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow);
   transform: scale(1);
   border-color: var(--color-border);
   background: var(--color-bg-card);

@@ -1,7 +1,12 @@
 export const environment = {
-  production: false,
-  /** Backend API base URL for SMS/email notifications. Use full URL in production. */
-  apiBaseUrl: 'http://localhost:4000',
+  production: true,
+  /**
+   * Backend API base URL for SMS/email notifications.
+   * Replace with your deployed backend URL (no trailing slash), e.g.:
+   *   https://your-backend.railway.app
+   *   https://api.yourdomain.com
+   */
+  apiBaseUrl: 'https://YOUR_BACKEND_URL',
   firebase: {
     apiKey: 'AIzaSyAd_Cwz636R33yNkEdMVP1afg4VvKNoAQA',
     authDomain: 'brims-2028e.firebaseapp.com',
@@ -12,4 +17,3 @@ export const environment = {
     measurementId: 'G-9X32JTKL7F',
   },
 };
-

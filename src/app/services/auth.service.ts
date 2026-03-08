@@ -290,45 +290,55 @@ export class AuthService {
     }
   }
 
-  forgotPassword(email: string): { success: boolean; message?: string } {
-    // Demo: Check if email exists in our demo users
-    const validEmails = ['staff@barangay.gov', 'admin@barangay.gov', 'resident@email.com'];
-    
-    if (!validEmails.includes(email)) {
-      // In a real app, you might still return success to prevent email enumeration
-      // For demo purposes, we'll be more explicit
+  /** Returns success and optional resetLink so the caller can send it via Nodemailer (backend). */
+  forgotPassword(email: string): { success: boolean; message?: string; resetLink?: string } {
+    const normalizedEmail = email?.trim().toLowerCase() ?? '';
+
+    // Check if email exists in residents (same as login)
+    const residentExists = this.data.residents.some(
+      (r) => r.email?.trim().toLowerCase() === normalizedEmail
+    );
+    // Check if email exists in staff/admin users (same as login)
+    const staffOrAdminExists = this.data.users.some(
+      (u) =>
+        u.email?.trim().toLowerCase() === normalizedEmail &&
+        (u.role === 'Staff' || u.role === 'Admin') &&
+        u.status === 'Active'
+    );
+
+    if (!residentExists && !staffOrAdminExists) {
       return { success: false, message: 'Email not found in our system.' };
     }
 
-    // Generate a simple reset token (in production, use a secure random token)
     const resetToken = this.generateResetToken();
-    
-    // Store reset token temporarily (in production, store in database with expiration)
+
     const resetData = {
-      email,
+      email: normalizedEmail,
       token: resetToken,
       expiresAt: Date.now() + 3600000, // 1 hour from now
     };
-    
-    sessionStorage.setItem(`reset_token_${email}`, JSON.stringify(resetData));
-    
-    // In a real app, send email with reset link
-    // For demo: log the reset link
-    console.log(`Reset link for ${email}: /reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`);
-    
-    return { success: true };
+
+    sessionStorage.setItem(`reset_token_${normalizedEmail}`, JSON.stringify(resetData));
+
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const resetLink = `${origin}/reset-password?token=${resetToken}&email=${encodeURIComponent(normalizedEmail)}`;
+
+    return { success: true, resetLink };
   }
 
   resetPassword(token: string, email: string, newPassword: string): { success: boolean; message?: string } {
+    const normalizedEmail = email?.trim().toLowerCase() ?? '';
+    const storageKey = `reset_token_${normalizedEmail}`;
+
     // Retrieve reset token from storage
-    const resetDataStr = sessionStorage.getItem(`reset_token_${email}`);
-    
+    const resetDataStr = sessionStorage.getItem(storageKey);
+
     if (!resetDataStr) {
       return { success: false, message: 'Invalid or expired reset token.' };
     }
 
     const resetData = JSON.parse(resetDataStr);
-    
+
     // Check if token matches
     if (resetData.token !== token) {
       return { success: false, message: 'Invalid reset token.' };
@@ -336,13 +346,13 @@ export class AuthService {
 
     // Check if token has expired
     if (Date.now() > resetData.expiresAt) {
-      sessionStorage.removeItem(`reset_token_${email}`);
+      sessionStorage.removeItem(storageKey);
       return { success: false, message: 'Reset token has expired. Please request a new one.' };
     }
 
     // In a real app, update password in database
     // For demo: just remove the reset token
-    sessionStorage.removeItem(`reset_token_${email}`);
+    sessionStorage.removeItem(storageKey);
     
     // Log password reset (in production, update database)
     console.log(`Password reset for ${email} completed successfully.`);

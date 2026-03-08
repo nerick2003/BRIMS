@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { EmailService } from '../../services/email.service';
 
 @Component({
   selector: 'app-forgot-password',
@@ -20,6 +21,7 @@ export class ForgotPasswordComponent {
   constructor(
     private auth: AuthService,
     private router: Router,
+    private emailService: EmailService,
   ) {}
 
   onSubmit() {
@@ -36,17 +38,34 @@ export class ForgotPasswordComponent {
     this.error = '';
     this.loading = true;
 
-    // Simulate API call
-    setTimeout(() => {
-      const result = this.auth.forgotPassword(this.email);
+    const result = this.auth.forgotPassword(this.email.trim());
+
+    if (!result.success) {
       this.loading = false;
-      
-      if (result.success) {
-        this.success = true;
-      } else {
-        this.error = result.message || 'Failed to send reset email. Please try again.';
-      }
-    }, 1000);
+      this.error = result.message || 'Failed to send reset email. Please try again.';
+      return;
+    }
+
+    if (result.resetLink) {
+      const subject = 'Reset your BRIMMS password';
+      const message = `Click the link below to reset your password. This link expires in 1 hour.\n\n${result.resetLink}\n\nIf you did not request this, please ignore this email.`;
+      this.emailService.sendEmail({ to: this.email.trim(), subject, message }).subscribe({
+        next: (res) => {
+          this.loading = false;
+          this.success = res.success;
+          if (!res.success) {
+            this.error = res.error || 'Failed to send reset email. Please try again.';
+          }
+        },
+        error: () => {
+          this.loading = false;
+          this.error = 'Failed to send reset email. Please check your connection and try again.';
+        },
+      });
+    } else {
+      this.loading = false;
+      this.success = true;
+    }
   }
 
   backToLogin() {

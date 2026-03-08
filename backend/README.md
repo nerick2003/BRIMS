@@ -8,12 +8,9 @@ This is a minimal **Node.js + Express** backend that exposes SMS and notificatio
   - `TWILIO_ACCOUNT_SID`
   - `TWILIO_AUTH_TOKEN`
   - `TWILIO_FROM_NUMBER`
-- **Email**: Generic SMTP via Nodemailer
-  - `SMTP_HOST`
-  - `SMTP_PORT`
-  - `SMTP_USER`
-  - `SMTP_PASS`
-  - `EMAIL_FROM` (optional, falls back to `SMTP_USER` if not set)
+- **Email**: Resend (recommended) or SMTP
+  - **Resend** (works on Railway, no port blocking): `RESEND_API_KEY`, optional `RESEND_FROM` or `EMAIL_FROM`
+  - **SMTP** (fallback): `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`
 
 ## API Endpoints
 

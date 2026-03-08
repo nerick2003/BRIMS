@@ -1,11 +1,14 @@
 // Simple Express backend for BRIMMS SMS & notifications
 // SMS provider: Twilio
-// Email provider: generic SMTP via Nodemailer
+// Email provider: Resend (preferred) or SMTP via Nodemailer
 //
 // Environment variables (see .env.example):
 // - TWILIO_ACCOUNT_SID
 // - TWILIO_AUTH_TOKEN
 // - TWILIO_FROM_NUMBER
+// - RESEND_API_KEY (preferred for email - works on Railway; no SMTP blocking)
+// - EMAIL_FROM or RESEND_FROM (required when using Resend; verify domain at resend.com)
+// - SMTP_* (fallback when RESEND_API_KEY not set)
 // - PORT (optional, default 4000)
 // - CORS_ORIGIN (optional, default http://localhost:4200)
 // - API_AUTH_TOKEN (optional, but strongly recommended in non-demo deployments)
@@ -79,7 +82,43 @@ function getTwilioClient() {
   return { client, fromNumber };
 }
 
-// Initialize Nodemailer transporter (lazy)
+// Resend API (preferred - works on Railway, no SMTP port blocking)
+async function sendEmailViaResend({ from, to, subject, text, attachmentName, attachmentContent, attachmentMimeType }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+
+  const fromAddr = from || process.env.RESEND_FROM || process.env.EMAIL_FROM || 'BRIMMS <onboarding@resend.dev>';
+  const payload = {
+    from: fromAddr,
+    to: Array.isArray(to) ? to : [to],
+    subject,
+    text,
+  };
+
+  if (attachmentName && attachmentContent) {
+    const content = Buffer.isBuffer(attachmentContent)
+      ? attachmentContent.toString('base64')
+      : attachmentContent;
+    payload.attachments = [{ filename: attachmentName, content }];
+  }
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error || `Resend API error: ${res.status}`);
+  }
+  return { messageId: data.id };
+}
+
+// Initialize Nodemailer transporter (lazy) - fallback when Resend not used
 let emailTransporter = null;
 
 function getEmailTransporter() {
@@ -104,6 +143,32 @@ function getEmailTransporter() {
   });
 
   return emailTransporter;
+}
+
+// Send email: use Resend if API key set, else SMTP
+async function sendEmail({ from, to, subject, message, attachmentName, attachmentContent, attachmentMimeType }) {
+  const fromAddr = from || process.env.EMAIL_FROM || process.env.SMTP_USER;
+  const opts = { from: fromAddr, to, subject, text: message, attachmentName, attachmentContent, attachmentMimeType };
+
+  const resendResult = await sendEmailViaResend(opts);
+  if (resendResult) return resendResult;
+
+  const transporter = getEmailTransporter();
+  const mailOptions = {
+    from: fromAddr,
+    to,
+    subject,
+    text: message,
+  };
+  if (attachmentName && attachmentContent) {
+    mailOptions.attachments = [{
+      filename: attachmentName,
+      content: Buffer.isBuffer(attachmentContent) ? attachmentContent : Buffer.from(attachmentContent, 'base64'),
+      contentType: attachmentMimeType || undefined,
+    }];
+  }
+  const info = await transporter.sendMail(mailOptions);
+  return { messageId: info.messageId };
 }
 
 // Utility to push notification record
@@ -180,28 +245,22 @@ app.post('/api/notifications/email', requireApiAuth, async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields: to, subject, message' });
   }
 
-  try {
-    const transporter = getEmailTransporter();
-    const from = process.env.EMAIL_FROM || process.env.SMTP_USER;
+  if (!process.env.RESEND_API_KEY && !process.env.SMTP_HOST) {
+    return res.status(503).json({
+      success: false,
+      error: 'Email not configured. Set RESEND_API_KEY (recommended) or SMTP_* variables.',
+    });
+  }
 
-    const mailOptions = {
-      from,
+  try {
+    const info = await sendEmail({
       to,
       subject,
-      text: message,
-    };
-
-    if (attachmentName && attachmentContent) {
-      mailOptions.attachments = [
-        {
-          filename: attachmentName,
-          content: Buffer.from(attachmentContent, 'base64'),
-          contentType: attachmentMimeType || undefined,
-        },
-      ];
-    }
-
-    const info = await transporter.sendMail(mailOptions);
+      message,
+      attachmentName,
+      attachmentContent,
+      attachmentMimeType,
+    });
 
     const record = recordNotification({
       type: 'email',
@@ -263,10 +322,14 @@ app.post('/api/notifications/email/bulk', requireApiAuth, maybeMulterBulk, async
       .json({ error: 'Missing required fields: recipients (array), subject, message' });
   }
 
-  try {
-    const transporter = getEmailTransporter();
-    const from = process.env.EMAIL_FROM || process.env.SMTP_USER;
+  if (!process.env.RESEND_API_KEY && !process.env.SMTP_HOST) {
+    return res.status(503).json({
+      success: false,
+      error: 'Email not configured. Set RESEND_API_KEY (recommended) or SMTP_* variables.',
+    });
+  }
 
+  try {
     const results = [];
     const attachmentBuffer =
       attachmentContent instanceof Buffer
@@ -277,24 +340,14 @@ app.post('/api/notifications/email/bulk', requireApiAuth, maybeMulterBulk, async
 
     for (const to of recipients) {
       try {
-        const mailOptions = {
-          from,
+        const info = await sendEmail({
           to,
           subject,
-          text: message,
-        };
-
-        if (attachmentName && attachmentBuffer) {
-          mailOptions.attachments = [
-            {
-              filename: attachmentName,
-              content: attachmentBuffer,
-              contentType: attachmentMimeType || undefined,
-            },
-          ];
-        }
-
-        const info = await transporter.sendMail(mailOptions);
+          message,
+          attachmentName,
+          attachmentContent: attachmentBuffer,
+          attachmentMimeType,
+        });
         const record = recordNotification({
           type: 'email',
           recipient: to,

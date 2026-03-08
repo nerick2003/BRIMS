@@ -102,6 +102,9 @@ async function sendEmailViaResend({ from, to, subject, text, attachmentName, att
     payload.attachments = [{ filename: attachmentName, content }];
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -109,7 +112,8 @@ async function sendEmailViaResend({ from, to, subject, text, attachmentName, att
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(payload),
-  });
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timeoutId));
 
   const data = await res.json();
   if (!res.ok) {

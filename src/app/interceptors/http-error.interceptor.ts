@@ -20,9 +20,12 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const apiConfig = inject(ApiConfigService);
 
   // Determine retry configuration based on request
+  const isNotificationApi = req.url.includes('/api/notifications/');
   const shouldRetry = (error: HttpErrorResponse): boolean => {
+    // Don't retry connection errors for notifications - fail fast for clearer feedback
+    if (isNotificationApi && error.status === 0) return false;
     // Retry on network errors or 5xx server errors (except 501)
-    if (error.status === 0) return true; // Network error
+    if (error.status === 0) return true;
     if (error.status >= 500 && error.status !== 501) return true;
     return false;
   };

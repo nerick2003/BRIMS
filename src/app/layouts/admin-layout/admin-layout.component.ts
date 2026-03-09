@@ -31,6 +31,15 @@ export class AdminLayoutComponent implements OnInit, AfterViewInit, OnDestroy {
     private alert: AlertService,
   ) {}
 
+  /** Hide mobile hamburger on QR scanner + add resident/household forms */
+  get showMobileMenuToggle(): boolean {
+    const url = this.router.url;
+    if (url.includes('/qr-scanner')) return false;
+    if (url.includes('/residents/add')) return false;
+    if (url.includes('/households/add')) return false;
+    return true;
+  }
+
   /**
    * Control visibility of the fixed top-right UI (theme toggle + profile).
    *
@@ -48,7 +57,6 @@ export class AdminLayoutComponent implements OnInit, AfterViewInit, OnDestroy {
   get showTopRightUi(): boolean {
     const url = this.router.url;
     if (url.startsWith('/admin/households/map')) return false;
-    if (url.includes('/settings')) return false;
     if (url.includes('/residents/add') || url.includes('/households/add')) return false;
     if (url.includes('/households/') && url.includes('/edit')) return false;
     if (url.includes('/qr-scanner')) return false;

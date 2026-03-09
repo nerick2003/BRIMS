@@ -482,7 +482,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private updateGlobalUi(url: string) {
-    // Hide on login page, forgot password page, reset password page, settings page,
+    // Hide on login page, forgot password page, reset password page,
     // resident profile, request details page, QR scanner page, 404 error page,
     // and the full-screen household map page (maximize map space).
     const isStaffOrAdminRequestDetailPage =
@@ -500,7 +500,6 @@ export class AppComponent implements OnInit, OnDestroy {
       && !url.startsWith('/contact')
       && !url.startsWith('/forgot-password')
       && !url.startsWith('/reset-password')
-      && !url.includes('/settings')
       && !url.includes('/residents/add')
       && !url.includes('/households/add')
       && !(url.includes('/households/') && url.includes('/edit'))

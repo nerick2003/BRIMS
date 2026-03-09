@@ -38,10 +38,8 @@ export class ResidentLayoutComponent implements OnInit, AfterViewInit, OnDestroy
     return null;
   }
 
-  /** Hide profile + theme toggle only on settings page */
+  /** Always show profile + theme toggle (including on resident settings/accounts). */
   get showTopRightUi(): boolean {
-    const url = this.router.url;
-    if (url.includes('/settings')) return false;
     return true;
   }
 

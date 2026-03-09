@@ -1,5 +1,5 @@
 <div class="staff-layout" [class.staff-layout--no-top-bar]="!showTopRightUi">
-  @if (!isMobileMenuOpen) {
+  @if (!isMobileMenuOpen && showMobileMenuToggle) {
     <button 
       class="mobile-menu-toggle" 
       (click)="toggleMobileMenu()"

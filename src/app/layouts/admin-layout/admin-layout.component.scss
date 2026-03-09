@@ -150,6 +150,13 @@
   flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
+  /* Hide visible scrollbar while keeping scroll behavior */
+  scrollbar-width: none; /* Firefox */
+
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
 
   .nav-item {
     flex: 0 0 auto;

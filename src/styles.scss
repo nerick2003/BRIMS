@@ -420,6 +420,13 @@ a {
   box-shadow: none;
 }
 
+/* Blur the entire app background whenever a SweetAlert2 modal is open */
+body.swal2-shown > *:not(.swal2-container) {
+  filter: blur(4px);
+  -webkit-filter: blur(4px);
+  transition: filter 0.2s ease, -webkit-filter 0.2s ease;
+}
+
 /* Dropdown / select - consistent look across the app (!important so component styles don't hide arrow) */
 $select-arrow-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 

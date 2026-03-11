@@ -804,22 +804,39 @@ select.household-map-filter-group__input {
   }
 }
 
-/* When SweetAlert2 modal is open (e.g. logout/export confirm), dim + disable notification bell */
-body.swal2-shown .global-notifications {
+/* When SweetAlert2 modal is open (e.g. logout/export confirm), dim + disable top-right controls */
+body.swal2-shown .global-notifications,
+body.swal2-shown .top-bar__icon-button {
   opacity: 0.4;
   pointer-events: none;
 }
 
+/* Keep icon glyphs consistent while dimmed */
+body.swal2-shown .global-notifications__bell,
+body.swal2-shown .top-bar__icon-button {
+  color: var(--color-text-muted) !important;
+}
+
+/* Ensure hover / focus states don't pop while SweetAlert is visible */
 body.swal2-shown .global-notifications__bell,
 body.swal2-shown .global-notifications__bell:hover,
 body.swal2-shown .global-notifications__bell:active,
 body.swal2-shown .global-notifications__bell:focus,
-body.swal2-shown .global-notifications__bell:focus-visible {
+body.swal2-shown .global-notifications__bell:focus-visible,
+body.swal2-shown .top-bar__icon-button:hover,
+body.swal2-shown .top-bar__icon-button:active,
+body.swal2-shown .top-bar__icon-button:focus,
+body.swal2-shown .top-bar__icon-button:focus-visible {
   outline: none;
   box-shadow: var(--shadow);
   transform: scale(1);
   border-color: var(--color-border);
   background: var(--color-bg-card);
+}
+
+/* Slightly fade the bell glyph itself when SweetAlert is visible so its fill matches the dimmed UI */
+body.swal2-shown .global-notifications__icon {
+  opacity: 0.6;
 }
 
 /* Floating action button (add) - lower right, shown on list pages */

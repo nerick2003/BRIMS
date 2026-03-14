@@ -46,6 +46,28 @@
               <span class="info-label">Request ID</span>
               <span class="info-value info-value--mono">{{ request.id }}</span>
             </div>
+            @if (request.status === 'Approved' && request.approvedByName) {
+              <div class="info-item">
+                <span class="info-label">Approved By</span>
+                <span class="info-value">
+                  {{ request.approvedByName }}
+                  @if (request.approvedAt) {
+                    <span class="muted">on {{ request.approvedAt | date:'medium' }}</span>
+                  }
+                </span>
+              </div>
+            }
+            @if (request.status === 'Rejected' && request.rejectedByName) {
+              <div class="info-item">
+                <span class="info-label">Rejected By</span>
+                <span class="info-value">
+                  {{ request.rejectedByName }}
+                  @if (request.rejectedAt) {
+                    <span class="muted">on {{ request.rejectedAt | date:'medium' }}</span>
+                  }
+                </span>
+              </div>
+            }
           </div>
         </div>
 

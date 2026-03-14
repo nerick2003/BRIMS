@@ -19,6 +19,9 @@ export class UsersRolesComponent {
   roleFilter = '';
   statusFilter = '';
 
+  /** Track selected user IDs for bulk actions. */
+  private selectedUserIds = new Set<string>();
+
   get users(): SystemUser[] {
     return this.data.getActiveUsers();
   }
@@ -71,6 +74,77 @@ export class UsersRolesComponent {
     }
     
     return result;
+  }
+
+  get selectedCount(): number {
+    return this.selectedUserIds.size;
+  }
+
+  /** Controls visibility of the animated bulk actions bar. */
+  isBulkActionsBarClosing = false;
+  private bulkBarCloseTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  get showBulkActionsBar(): boolean {
+    return this.selectedCount > 0 || this.isBulkActionsBarClosing;
+  }
+
+  get allSelected(): boolean {
+    const current = this.filteredUsers;
+    return current.length > 0 && current.every(u => this.selectedUserIds.has(u.id));
+  }
+
+  get someSelected(): boolean {
+    const current = this.filteredUsers;
+    const selectedOnPage = current.filter(u => this.selectedUserIds.has(u.id)).length;
+    return selectedOnPage > 0 && !this.allSelected;
+  }
+
+  isSelected(user: SystemUser): boolean {
+    return this.selectedUserIds.has(user.id);
+  }
+
+  onToggleSelectAll(checked: boolean): void {
+    if (checked) {
+      this.filteredUsers.forEach(u => this.selectedUserIds.add(u.id));
+    } else {
+      this.filteredUsers.forEach(u => this.selectedUserIds.delete(u.id));
+    }
+    this.handleBulkBarSelectionChanged();
+  }
+
+  onUserSelectionChange(user: SystemUser, checked: boolean): void {
+    if (checked) {
+      this.selectedUserIds.add(user.id);
+    } else {
+      this.selectedUserIds.delete(user.id);
+    }
+    this.handleBulkBarSelectionChanged();
+  }
+
+  private clearSelection(): void {
+    this.selectedUserIds.clear();
+    this.handleBulkBarSelectionChanged();
+  }
+
+  private handleBulkBarSelectionChanged(): void {
+    if (this.selectedCount > 0) {
+      if (this.bulkBarCloseTimeout) {
+        clearTimeout(this.bulkBarCloseTimeout);
+        this.bulkBarCloseTimeout = null;
+      }
+      this.isBulkActionsBarClosing = false;
+      return;
+    }
+
+    if (this.isBulkActionsBarClosing || this.bulkBarCloseTimeout) {
+      return;
+    }
+
+    this.isBulkActionsBarClosing = true;
+    this.bulkBarCloseTimeout = setTimeout(() => {
+      this.isBulkActionsBarClosing = false;
+      this.bulkBarCloseTimeout = null;
+    }, 180);
   }
 
   openAddUserForm(): void {
@@ -222,6 +296,49 @@ export class UsersRolesComponent {
     await Swal.fire({
       title: 'Archived',
       text: 'The user has been moved to Archives.',
+      icon: 'success',
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  }
+
+  async archiveSelectedUsers(): Promise<void> {
+    if (this.selectedUserIds.size === 0) return;
+
+    const selectedUsers = this.filteredUsers.filter(u => this.selectedUserIds.has(u.id));
+    const eligible = selectedUsers.filter(
+      u => (u.role === 'Admin' || u.role === 'Staff') && !u.archived
+    );
+
+    if (eligible.length === 0) {
+      await Swal.fire({
+        icon: 'info',
+        title: 'No eligible users',
+        text: 'Only Admin and Staff accounts can be archived in bulk.',
+        confirmButtonText: 'OK',
+      });
+      return;
+    }
+
+    const count = eligible.length;
+    const result = await Swal.fire({
+      title: 'Archive selected users?',
+      text: `Archive ${count} selected Admin/Staff account(s)? They will move to Archives and be hidden from this list.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, archive',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      focusCancel: true,
+    });
+    if (!result.isConfirmed) return;
+
+    eligible.forEach(u => this.data.archiveUser(u.id));
+    this.clearSelection();
+
+    await Swal.fire({
+      title: 'Archived',
+      text: `${count} user account(s) have been moved to Archives.`,
       icon: 'success',
       timer: 1500,
       showConfirmButton: false,

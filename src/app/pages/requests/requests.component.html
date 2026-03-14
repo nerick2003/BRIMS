@@ -10,6 +10,16 @@
     <table class="table">
       <thead>
         <tr>
+          @if (isAdmin) {
+            <th>
+              <input
+                type="checkbox"
+                [checked]="allSelected"
+                [indeterminate]="someSelected"
+                (change)="onToggleSelectAll($any($event.target).checked)"
+              />
+            </th>
+          }
           <th>Type</th>
           <th>Purpose</th>
           <th>Status</th>
@@ -20,6 +30,15 @@
       <tbody>
         @for (r of requests; track r.id) {
           <tr>
+            @if (isAdmin) {
+              <td>
+                <input
+                  type="checkbox"
+                  [checked]="isSelected(r)"
+                  (change)="onRequestSelectionChange(r, $any($event.target).checked)"
+                />
+              </td>
+            }
             <td>{{ r.type }}</td>
             <td>{{ r.purpose }}</td>
             <td>
@@ -53,4 +72,19 @@
       </tbody>
     </table>
   </div>
+
+  @if (isAdmin && showBulkActionsBar) {
+    <div
+      class="bulk-actions-bar"
+      [class.bulk-actions-bar--closing]="isBulkActionsBarClosing"
+    >
+      <button
+        type="button"
+        class="btn bulk-actions-btn"
+        (click)="archiveSelected()"
+      >
+        Archive Selected ({{ selectedCount }})
+      </button>
+    </div>
+  }
 </div>

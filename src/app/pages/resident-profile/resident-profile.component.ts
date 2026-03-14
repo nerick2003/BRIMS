@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DataService, Household, Resident, CertificateRequest } from '../../services/data.service';
+import { AuthService } from '../../services/auth.service';
 import { QrCodeService } from '../../services/qr-code.service';
 import { Subscription } from 'rxjs';
 
@@ -42,6 +43,7 @@ export class ResidentProfileComponent implements OnInit, OnDestroy {
     private router: Router,
     private data: DataService,
     private qrCodeService: QrCodeService,
+    private auth: AuthService,
   ) {}
 
   ngOnInit() {
@@ -156,6 +158,8 @@ export class ResidentProfileComponent implements OnInit, OnDestroy {
     const purpose = this.certificatePurpose.trim() || 'Issued from resident profile';
     const id = this.nextRequestId();
     const date = this.formatDate(new Date());
+    const nowIso = new Date().toISOString();
+    const user = this.auth.currentUser;
     const request: CertificateRequest = {
       id,
       type: this.certificateType,
@@ -163,6 +167,12 @@ export class ResidentProfileComponent implements OnInit, OnDestroy {
       status: 'Approved',
       date,
       residentId: this.resident.residentId,
+      approvedById: user?.id ?? null,
+      approvedByName: user?.name ?? null,
+      approvedAt: nowIso,
+      rejectedById: null,
+      rejectedByName: null,
+      rejectedAt: null,
     };
     this.data.addRequest(request);
     this.createdRequestId = id;

@@ -134,6 +134,10 @@
   font-size: 0.875rem;
 }
 
+.archives-page .table tbody td .btn + .btn {
+  margin-left: 0.5rem;
+}
+
 .empty-cell {
   text-align: center;
   padding: 2rem;

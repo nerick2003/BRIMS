@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DataService, CertificateRequest, Resident } from '../../services/data.service';
 import { QrCodeService } from '../../services/qr-code.service';
 import { CertificateGeneratorService } from '../../services/certificate-generator.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-request-detail',
@@ -26,6 +27,7 @@ export class RequestDetailComponent implements OnInit {
     private data: DataService,
     private qrCodeService: QrCodeService,
     private certificateGenerator: CertificateGeneratorService,
+    private auth: AuthService,
   ) {
     // Initialize on first load
     const id = this.route.snapshot.paramMap.get('id');
@@ -98,8 +100,19 @@ export class RequestDetailComponent implements OnInit {
     if (!this.request || this.isUpdating) return;
     this.isUpdating = true;
     const id = this.request.id;
-    this.data.updateRequest(id, { status: 'Approved' });
-    this.request = { ...this.request, status: 'Approved' };
+    const user = this.auth.currentUser;
+    const now = new Date().toISOString();
+    const updates: Partial<CertificateRequest> = {
+      status: 'Approved',
+      approvedById: user?.id ?? null,
+      approvedByName: user?.name ?? null,
+      approvedAt: now,
+      rejectedById: null,
+      rejectedByName: null,
+      rejectedAt: null,
+    };
+    this.data.updateRequest(id, updates);
+    this.request = { ...this.request, ...updates };
     this.isUpdating = false;
   }
 
@@ -107,8 +120,19 @@ export class RequestDetailComponent implements OnInit {
     if (!this.request || this.isUpdating) return;
     this.isUpdating = true;
     const id = this.request.id;
-    this.data.updateRequest(id, { status: 'Rejected' });
-    this.request = { ...this.request, status: 'Rejected' };
+    const user = this.auth.currentUser;
+    const now = new Date().toISOString();
+    const updates: Partial<CertificateRequest> = {
+      status: 'Rejected',
+      rejectedById: user?.id ?? null,
+      rejectedByName: user?.name ?? null,
+      rejectedAt: now,
+      approvedById: null,
+      approvedByName: null,
+      approvedAt: null,
+    };
+    this.data.updateRequest(id, updates);
+    this.request = { ...this.request, ...updates };
     this.isUpdating = false;
   }
 

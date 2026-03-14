@@ -39,6 +39,18 @@ export interface CertificateRequest {
   status: 'Approved' | 'Pending' | 'For Review' | 'Rejected';
   date: string;
   residentId?: string;
+  /** User ID of the staff/admin who last approved this request. */
+  approvedById?: string | null;
+  /** Display name of the staff/admin who last approved this request. */
+  approvedByName?: string | null;
+  /** When the request was approved (ISO string). */
+  approvedAt?: string | null;
+  /** User ID of the staff/admin who last rejected this request. */
+  rejectedById?: string | null;
+  /** Display name of the staff/admin who last rejected this request. */
+  rejectedByName?: string | null;
+  /** When the request was rejected (ISO string). */
+  rejectedAt?: string | null;
   /** Soft-archive flag for old/completed requests. */
   archived?: boolean;
   /** When this request was archived (ISO string). */
@@ -322,7 +334,17 @@ export class DataService {
 
   /** Requests that are not archived (active / recent). */
   getActiveRequests(): CertificateRequest[] {
-    return this.requests.filter(r => !r.archived);
+    return this.requests
+      .filter(r => !r.archived)
+      .slice()
+      .sort((a, b) => {
+        const da = this.parseDate(a.date);
+        const db = this.parseDate(b.date);
+        if (!da && !db) return 0;
+        if (!da) return 1;
+        if (!db) return -1;
+        return db.getTime() - da.getTime();
+      });
   }
 
   /** Requests that have been archived (old/completed). */

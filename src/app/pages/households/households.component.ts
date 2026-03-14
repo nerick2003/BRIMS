@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { DataService, Household } from '../../services/data.service';
 import { Subscription } from 'rxjs';
 import { LoadingStateComponent } from '../../shared/loading-state.component';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-households',
@@ -23,6 +24,9 @@ export class HouseholdsComponent implements OnInit, OnDestroy {
   errorMessage = '';
   private subscription?: Subscription;
   private loadingTimeout?: ReturnType<typeof setTimeout>;
+
+  /** Track selected household IDs for bulk actions. */
+  private selectedHouseholdIds = new Set<string>();
 
   ngOnInit() {
     // Check if data is already loaded
@@ -105,6 +109,99 @@ export class HouseholdsComponent implements OnInit, OnDestroy {
     }
     
     return result;
+  }
+
+  get selectedCount(): number {
+    return this.selectedHouseholdIds.size;
+  }
+
+  /** Controls visibility of the animated bulk actions bar. */
+  isBulkActionsBarClosing = false;
+  private bulkBarCloseTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  get showBulkActionsBar(): boolean {
+    return this.selectedCount > 0 || this.isBulkActionsBarClosing;
+  }
+
+  get allSelected(): boolean {
+    const current = this.filteredHouseholds;
+    return current.length > 0 && current.every(h => this.selectedHouseholdIds.has(h.id));
+  }
+
+  get someSelected(): boolean {
+    const current = this.filteredHouseholds;
+    const selectedOnPage = current.filter(h => this.selectedHouseholdIds.has(h.id)).length;
+    return selectedOnPage > 0 && !this.allSelected;
+  }
+
+  isSelected(household: Household): boolean {
+    return this.selectedHouseholdIds.has(household.id);
+  }
+
+  onToggleSelectAll(checked: boolean): void {
+    if (checked) {
+      this.filteredHouseholds.forEach(h => this.selectedHouseholdIds.add(h.id));
+    } else {
+      this.filteredHouseholdIdsClear();
+    }
+    this.handleBulkBarSelectionChanged();
+  }
+
+  onHouseholdSelectionChange(household: Household, checked: boolean): void {
+    if (checked) {
+      this.selectedHouseholdIds.add(household.id);
+    } else {
+      this.selectedHouseholdIds.delete(household.id);
+    }
+    this.handleBulkBarSelectionChanged();
+  }
+
+  private filteredHouseholdIdsClear(): void {
+    this.filteredHouseholds.forEach(h => this.selectedHouseholdIds.delete(h.id));
+  }
+
+  private clearSelection(): void {
+    this.selectedHouseholdIds.clear();
+    this.handleBulkBarSelectionChanged();
+  }
+
+  private handleBulkBarSelectionChanged(): void {
+    if (this.selectedCount > 0) {
+      if (this.bulkBarCloseTimeout) {
+        clearTimeout(this.bulkBarCloseTimeout);
+        this.bulkBarCloseTimeout = null;
+      }
+      this.isBulkActionsBarClosing = false;
+      return;
+    }
+
+    if (this.isBulkActionsBarClosing || this.bulkBarCloseTimeout) {
+      return;
+    }
+
+    this.isBulkActionsBarClosing = true;
+    this.bulkBarCloseTimeout = setTimeout(() => {
+      this.isBulkActionsBarClosing = false;
+      this.bulkBarCloseTimeout = null;
+    }, 180);
+  }
+
+  async archiveSelectedHouseholds(): Promise<void> {
+    if (this.selectedHouseholdIds.size === 0) return;
+    const count = this.selectedHouseholdIds.size;
+    const result = await Swal.fire({
+      title: 'Archive selected households?',
+      text: `Archive ${count} selected household(s)? They will move to Archives and be hidden from the main list.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, archive',
+      cancelButtonText: 'Cancel',
+    });
+    if (!result.isConfirmed) return;
+
+    const toArchive = this.filteredHouseholds.filter(h => this.selectedHouseholdIds.has(h.id));
+    toArchive.forEach(h => this.data.updateHousehold(h.id, { archived: true, archivedAt: new Date().toISOString() }));
+    this.clearSelection();
   }
 
   getHeadOfHousehold(household: Household): string {

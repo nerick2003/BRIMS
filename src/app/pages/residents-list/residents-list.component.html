@@ -26,7 +26,16 @@
     <table class="table">
       <thead>
         <tr>
-          <th><input type="checkbox" /></th>
+          <th>
+            @if (canArchiveResidents) {
+              <input
+                type="checkbox"
+                [checked]="allSelected"
+                [indeterminate]="someSelected"
+                (change)="onToggleSelectAll($any($event.target).checked)"
+              />
+            }
+          </th>
           <th>Resident ID</th>
           <th>Name</th>
           <th>Age</th>
@@ -40,7 +49,15 @@
       <tbody>
         @for (r of filteredResidents; track r.id) {
           <tr>
-            <td><input type="checkbox" /></td>
+            <td>
+              @if (canArchiveResidents) {
+                <input
+                  type="checkbox"
+                  [checked]="isSelected(r)"
+                  (change)="onResidentSelectionChange(r, $any($event.target).checked)"
+                />
+              }
+            </td>
             <td><a [routerLink]="[r.id]">{{ r.residentId }}</a></td>
             <td>{{ r.name }}</td>
             <td>{{ r.age }}</td>
@@ -58,9 +75,9 @@
                 <button
                   type="button"
                   class="btn btn--sm btn--outline"
-                  (click)="archiveResident(r)"
+                  [routerLink]="[r.id]"
                 >
-                  Archive
+                  View
                 </button>
               </td>
             }
@@ -76,4 +93,18 @@
       </tbody>
     </table>
   </div>
+  @if (canArchiveResidents && showBulkActionsBar) {
+    <div
+      class="bulk-actions-bar"
+      [class.bulk-actions-bar--closing]="isBulkActionsBarClosing"
+    >
+      <button
+        type="button"
+        class="btn bulk-actions-btn"
+        (click)="archiveSelectedResidents()"
+      >
+        Archive Selected Residents ({{ selectedCount }})
+      </button>
+    </div>
+  }
 </div>

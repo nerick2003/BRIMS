@@ -32,7 +32,14 @@
       <table class="table">
         <thead>
           <tr>
-            <th><input type="checkbox" /></th>
+            <th>
+              <input
+                type="checkbox"
+                [checked]="allSelected"
+                [indeterminate]="someSelected"
+                (change)="onToggleSelectAll($any($event.target).checked)"
+              />
+            </th>
             <th>Household ID</th>
             <th>Head of Household</th>
             <th>Address</th>
@@ -44,7 +51,13 @@
         <tbody>
           @for (household of filteredHouseholds; track household.id) {
             <tr>
-              <td><input type="checkbox" /></td>
+              <td>
+                <input
+                  type="checkbox"
+                  [checked]="isSelected(household)"
+                  (change)="onHouseholdSelectionChange(household, $any($event.target).checked)"
+                />
+              </td>
               <td><strong>{{ household.householdId }}</strong></td>
               <td>{{ getHeadOfHousehold(household) }}</td>
               <td>{{ household.address }}</td>
@@ -67,5 +80,19 @@
       </table>
     }
   </div>
+  @if (showBulkActionsBar) {
+    <div
+      class="bulk-actions-bar"
+      [class.bulk-actions-bar--closing]="isBulkActionsBarClosing"
+    >
+      <button
+        type="button"
+        class="btn bulk-actions-btn"
+        (click)="archiveSelectedHouseholds()"
+      >
+        Archive Selected Households ({{ selectedCount }})
+      </button>
+    </div>
+  }
 </div>
 

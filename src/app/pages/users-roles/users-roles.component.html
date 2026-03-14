@@ -157,7 +157,14 @@
         <table class="table">
           <thead>
             <tr>
-              <th><input type="checkbox" /></th>
+              <th>
+                <input
+                  type="checkbox"
+                  [checked]="allSelected"
+                  [indeterminate]="someSelected"
+                  (change)="onToggleSelectAll($any($event.target).checked)"
+                />
+              </th>
               <th>Name</th>
               <th>Email</th>
               <th>Role</th>
@@ -170,7 +177,13 @@
           <tbody>
             @for (user of filteredUsers; track user.id) {
               <tr>
-                <td><input type="checkbox" /></td>
+                <td>
+                  <input
+                    type="checkbox"
+                    [checked]="isSelected(user)"
+                    (change)="onUserSelectionChange(user, $any($event.target).checked)"
+                  />
+                </td>
                 <td><strong>{{ user.name }}</strong></td>
                 <td>{{ user.email }}</td>
                 <td>
@@ -201,15 +214,6 @@
                     >
                       {{ user.status === 'Active' ? 'Deactivate' : 'Activate' }}
                     </button>
-                    <button
-                      type="button"
-                      class="btn btn--sm btn--outline"
-                      *ngIf="user.role === 'Admin' || user.role === 'Staff'"
-                      (click)="archiveUser(user)"
-                      title="Archive user"
-                    >
-                      Archive
-                    </button>
                   </div>
                 </td>
               </tr>
@@ -223,6 +227,20 @@
           </tbody>
         </table>
       </div>
+      @if (showBulkActionsBar) {
+        <div
+          class="bulk-actions-bar"
+          [class.bulk-actions-bar--closing]="isBulkActionsBarClosing"
+        >
+          <button
+            type="button"
+            class="btn bulk-actions-btn"
+            (click)="archiveSelectedUsers()"
+          >
+            Archive Selected Users ({{ selectedCount }})
+          </button>
+        </div>
+      }
     </div>
 
     <!-- Roles Tab -->

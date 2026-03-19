@@ -374,7 +374,7 @@
   gap: 8px;
   padding-left: 24px;
   padding-right: 24px;
-  transition: transform 0.3s ease-out, filter 0.3s ease-out;
+  transition: transform 0.3s ease-out, filter 0.3s ease-out, opacity 0.3s ease-out;
 
   @media (min-width: 1440px) {
     left: 280px;
@@ -388,9 +388,11 @@
        doesn't overlap with the slide-in sidebar menu. */
     &.top-bar--sidebar-open {
       transform: none; /* keep top bar fixed; avoid sideways push */
-      opacity: 0;
+      opacity: 0.75;
+      filter: blur(2px);
+      -webkit-filter: blur(2px);
       pointer-events: none;
-      z-index: 0; /* move behind sidebar/backdrop */
+      z-index: 999; /* keep above backdrop, behind sidebar */
     }
   }
 
@@ -401,9 +403,11 @@
 
     &.top-bar--sidebar-open {
       transform: none;
-      opacity: 0;
+      opacity: 0.75;
+      filter: blur(2px);
+      -webkit-filter: blur(2px);
       pointer-events: none;
-      z-index: 0;
+      z-index: 999;
     }
   }
 }
@@ -723,7 +727,7 @@
 .fab--sidebar-open {
   z-index: 900; /* sit behind sidebar/backdrop */
   pointer-events: none; /* avoid clicks while menu is open */
-  opacity: 0; /* hide while sidebar is open */
+  opacity: 0.35; /* visible but disabled while sidebar is open */
   transform: translateY(6px) scale(0.96);
   filter: blur(2px);
 }

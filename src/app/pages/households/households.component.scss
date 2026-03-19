@@ -77,6 +77,51 @@
   z-index: 1000;
   animation: bulkBarPopIn 180ms cubic-bezier(0.16, 1, 0.3, 1);
   animation-fill-mode: both;
+
+  /* Reserve horizontal space on the right for the floating Add FAB.
+     Needed not just on mobile; otherwise the fixed center button can overlap it
+     on tablet/desktop widths. */
+  @media (max-width: 1280px) {
+    padding-right: clamp(160px, 18vw, 240px);
+    box-sizing: border-box;
+  }
+
+  /* Mobile: also reserve a bit on the left so the centered button doesn't feel cramped. */
+  @media (max-width: 640px) {
+    padding-left: 16px;
+    padding-right: clamp(120px, 40vw, 200px);
+    box-sizing: border-box;
+  }
+}
+
+/* Mobile sidebar open: blur/disable "Archive Selected ..." button. */
+:host-context(body.sidebar-open) {
+  .bulk-actions-bar {
+    pointer-events: none;
+  }
+
+  .bulk-actions-bar .btn.bulk-actions-btn {
+    pointer-events: none !important;
+    /* Sidebar open: visually disable + blur archive action. */
+    filter: blur(2px) !important;
+    -webkit-filter: blur(2px) !important;
+    opacity: 0.85;
+    line-height: normal;
+    position: relative;
+    overflow: hidden;
+    z-index: 0;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      filter: blur(2px);
+      opacity: 0.9;
+      z-index: -1;
+    }
+  }
 }
 
 .bulk-actions-bar .btn.bulk-actions-btn {
@@ -91,6 +136,12 @@
   color: #fff !important;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+
+  @media (max-width: 640px) {
+    min-width: 0;
+    width: 100%;
+    max-width: 340px;
+  }
 }
 
 .bulk-actions-bar .btn.bulk-actions-btn:hover {

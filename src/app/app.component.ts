@@ -125,14 +125,14 @@ import { NotificationTypeLabelPipe } from './services/notification-type-label.pi
         }
       }
 
-      /* When the sidebar drawer is open on laptop/mobile, hide the bell completely
-         and move it behind the drawer so it can't be clicked. */
+      /* When the sidebar drawer is open on laptop/mobile, disable + blur the bell
+         so it can't be clicked (but remains visible for context). */
       :host-context(body.sidebar-open) .global-notifications {
-        filter: blur(4px);
-        -webkit-filter: blur(4px);
-        opacity: 0;
+        filter: blur(2px);
+        -webkit-filter: blur(2px);
+        opacity: 0.45; /* disabled but more readable */
         pointer-events: none;
-        z-index: 0;
+        z-index: 999; /* keep visible (but still below the drawer) */
       }
 
       .global-notifications__bell {
@@ -215,20 +215,30 @@ import { NotificationTypeLabelPipe } from './services/notification-type-label.pi
         position: absolute;
         top: 52px;
         right: 0;
-        width: min(360px, calc(100vw - 32px));
+        /* Keep a stable width (avoid min()/dvw edge cases that can cause narrow panels) */
+        width: 360px;
+        max-width: calc(100vw - 32px);
         background: var(--color-bg-card);
         border: 1px solid var(--color-border);
         border-radius: var(--radius-lg);
         box-shadow: var(--shadow-lg);
         overflow: hidden;
+        max-height: calc(100vh - 80px);
         z-index: 1102;
         animation: globalNotificationsPanelIn 0.18s ease-out;
+        display: flex;
+        flex-direction: column;
 
         @media (max-width: 640px) {
-          top: 48px;
-          right: -12px;
-          width: calc(100vw - 24px);
-          max-width: 360px;
+          /* topbar height on mobile is 68px; keep panel below it (with small gap) */
+          top: 72px;
+          /* Anchor to viewport to prevent awkward offsets on mobile */
+          position: fixed;
+          left: 12px;
+          right: 12px;
+          width: auto;
+          max-width: none;
+          max-height: calc(100vh - 88px);
         }
       }
 
@@ -305,12 +315,16 @@ import { NotificationTypeLabelPipe } from './services/notification-type-label.pi
       }
 
       .global-notifications__panelBody {
+        flex: 1;
+        min-height: 0;
         padding: 12px 14px;
         background: linear-gradient(
           180deg,
           color-mix(in srgb, var(--color-bg-card) 92%, transparent),
           color-mix(in srgb, var(--color-bg) 100%, transparent)
         );
+        display: flex;
+        flex-direction: column;
       }
 
       .global-notifications__empty {
@@ -324,8 +338,10 @@ import { NotificationTypeLabelPipe } from './services/notification-type-label.pi
         list-style: none;
         margin: 0;
         padding: 4px 0;
-        max-height: 320px;
+        max-height: none;
         overflow-y: auto;
+        flex: 1;
+        min-height: 0;
         scrollbar-width: thin;
       }
 

@@ -55,6 +55,20 @@ import Swal from 'sweetalert2';
         z-index: 1000;
         animation: bulkBarPopIn 180ms cubic-bezier(0.16, 1, 0.3, 1);
         animation-fill-mode: both;
+
+        /* Reserve horizontal space on the right for the floating Add FAB.
+           Needed not just on mobile; otherwise fixed center button can overlap it
+           on tablet/desktop widths. */
+        @media (max-width: 1280px) {
+          padding-right: clamp(160px, 18vw, 240px);
+          box-sizing: border-box;
+        }
+
+        @media (max-width: 640px) {
+          padding-left: 16px;
+          padding-right: clamp(120px, 40vw, 200px);
+          box-sizing: border-box;
+        }
       }
 
       .bulk-actions-bar .bulk-actions-btn {

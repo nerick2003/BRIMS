@@ -120,6 +120,9 @@ export class AdminLayoutComponent implements OnInit, AfterViewInit, OnDestroy {
 
   toggleMobileMenu() {
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
+    // When the sidebar drawer opens, disable/close the top-right profile dropdown
+    // so it doesn't render on top of the drawer.
+    if (this.isMobileMenuOpen) this.isProfileMenuOpen = false;
     this.updateBodyClass();
   }
 

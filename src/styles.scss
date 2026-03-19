@@ -796,8 +796,8 @@ select.household-map-filter-group__input {
 @media (max-width: 1439px) {
   body.sidebar-open .global-notifications {
     transform: none; /* avoid sideways push */
-    filter: blur(4px);
-    -webkit-filter: blur(4px);
+    filter: blur(2px);
+    -webkit-filter: blur(2px);
   }
 }
 
@@ -806,8 +806,22 @@ select.household-map-filter-group__input {
 @media (max-width: 640px) {
   body.sidebar-open .global-notifications {
     transform: none;
-    opacity: 0;
+    opacity: 0.35; /* keep visible while disabled */
     pointer-events: none;
+  }
+}
+
+/* Sidebar open: visually disable + blur bulk archive/action button bar. */
+body.sidebar-open {
+  .bulk-actions-bar {
+    pointer-events: none;
+  }
+
+  .bulk-actions-bar .btn.bulk-actions-btn {
+    pointer-events: none !important;
+    filter: blur(2px) !important;
+    -webkit-filter: blur(2px) !important;
+    opacity: 0.85;
   }
 }
 

@@ -79,7 +79,7 @@
           </label>
         </div>
 
-        <div class="table-wrap">
+        <div class="table-wrap archives-table-wrap">
           <table class="table">
             <thead>
               <tr>
@@ -119,6 +119,49 @@
             </tbody>
           </table>
         </div>
+
+        <div class="archives-mobile-list">
+          @for (r of archivedResidents; track r.id) {
+            <div class="archives-mobile-card">
+              <div class="archives-mobile-card__title">
+                <a [routerLink]="['/admin/residents', r.id]">
+                  {{ r.residentId }}
+                </a>
+                <span class="archives-mobile-card__subtitle">{{ r.name }}</span>
+              </div>
+
+              <div class="archives-mobile-card__fields">
+                <div class="mobile-kv">
+                  <span class="mobile-kv__k">Gender</span>
+                  <span class="mobile-kv__v">{{ r.gender }}</span>
+                </div>
+
+                <div class="mobile-kv">
+                  <span class="mobile-kv__k">Purok</span>
+                  <span class="mobile-kv__v">{{ r.purok }}</span>
+                </div>
+
+                <div class="mobile-kv">
+                  <span class="mobile-kv__k">Archived At</span>
+                  <span class="mobile-kv__v">{{ r.archivedAt ? (r.archivedAt | date:'short') : '—' }}</span>
+                </div>
+
+                <div class="mobile-kv">
+                  <span class="mobile-kv__k">Reason</span>
+                  <span class="mobile-kv__v">{{ r.archivedReason || '—' }}</span>
+                </div>
+              </div>
+
+              <div class="archives-mobile-card__actions">
+                <button type="button" class="btn btn--sm" (click)="restoreResident(r)">
+                  Restore
+                </button>
+              </div>
+            </div>
+          } @empty {
+            <div class="mobile-empty">No archived residents match your filters.</div>
+          }
+        </div>
       </div>
     }
 
@@ -143,7 +186,7 @@
           </select>
         </div>
 
-        <div class="table-wrap">
+        <div class="table-wrap archives-table-wrap">
           <table class="table">
             <thead>
               <tr>
@@ -180,6 +223,43 @@
             </tbody>
           </table>
         </div>
+
+        <div class="archives-mobile-list">
+          @for (h of archivedHouseholds; track h.id) {
+            <div class="archives-mobile-card">
+              <div class="archives-mobile-card__title">
+                <span>{{ h.householdId }}</span>
+                <span class="archives-mobile-card__subtitle">{{ h.address }}</span>
+              </div>
+
+              <div class="archives-mobile-card__fields">
+                <div class="mobile-kv">
+                  <span class="mobile-kv__k">Purok</span>
+                  <span class="mobile-kv__v">{{ h.purok }}</span>
+                </div>
+
+                <div class="mobile-kv">
+                  <span class="mobile-kv__k">Archived At</span>
+                  <span class="mobile-kv__v">{{ h.archivedAt ? (h.archivedAt | date:'short') : '—' }}</span>
+                </div>
+              </div>
+
+              <div class="archives-mobile-card__actions">
+                <a
+                  [routerLink]="['/admin/households', h.id]"
+                  class="btn btn--sm btn--outline"
+                >
+                  View
+                </a>
+                <button type="button" class="btn btn--sm" (click)="restoreHousehold(h)">
+                  Restore
+                </button>
+              </div>
+            </div>
+          } @empty {
+            <div class="mobile-empty">No archived households match your filters.</div>
+          }
+        </div>
       </div>
     }
 
@@ -213,7 +293,7 @@
           </label>
         </div>
 
-        <div class="table-wrap">
+        <div class="table-wrap archives-table-wrap">
           <table class="table">
             <thead>
               <tr>
@@ -256,6 +336,49 @@
             </tbody>
           </table>
         </div>
+
+        <div class="archives-mobile-list">
+          @for (r of archivedRequests; track r.id) {
+            <div class="archives-mobile-card">
+              <div class="archives-mobile-card__title">
+                <span>{{ r.type }}</span>
+                <span class="archives-mobile-card__subtitle">
+                  <span class="status-pill" [attr.data-status]="r.status">
+                    {{ r.status }}
+                  </span>
+                </span>
+              </div>
+
+              <div class="archives-mobile-card__fields">
+                <div class="mobile-kv">
+                  <span class="mobile-kv__k">Purpose</span>
+                  <span class="mobile-kv__v">{{ r.purpose }}</span>
+                </div>
+
+                <div class="mobile-kv">
+                  <span class="mobile-kv__k">Request Date</span>
+                  <span class="mobile-kv__v">{{ r.date }}</span>
+                </div>
+
+                <div class="mobile-kv">
+                  <span class="mobile-kv__k">Archived At</span>
+                  <span class="mobile-kv__v">{{ r.archivedAt ? (r.archivedAt | date:'short') : '—' }}</span>
+                </div>
+              </div>
+
+              <div class="archives-mobile-card__actions">
+                <a [routerLink]="['/admin/requests', r.id]" class="btn btn--sm btn--outline">
+                  View
+                </a>
+                <button type="button" class="btn btn--sm" (click)="restoreRequest(r)">
+                  Restore
+                </button>
+              </div>
+            </div>
+          } @empty {
+            <div class="mobile-empty">No archived requests match your filters.</div>
+          }
+        </div>
       </div>
     }
 
@@ -282,7 +405,7 @@
           </select>
         </div>
 
-        <div class="table-wrap">
+        <div class="table-wrap archives-table-wrap">
           <table class="table">
             <thead>
               <tr>
@@ -327,6 +450,55 @@
               }
             </tbody>
           </table>
+        </div>
+
+        <div class="archives-mobile-list">
+          @for (u of archivedUsers; track u.id) {
+            <div class="archives-mobile-card">
+              <div class="archives-mobile-card__title">
+                <span>{{ u.name }}</span>
+                <span class="archives-mobile-card__subtitle">
+                  <span class="role-pill" [attr.data-role]="u.role">
+                    {{ u.role }}
+                  </span>
+                </span>
+              </div>
+
+              <div class="archives-mobile-card__fields">
+                <div class="mobile-kv">
+                  <span class="mobile-kv__k">Email</span>
+                  <span class="mobile-kv__v">{{ u.email }}</span>
+                </div>
+
+                <div class="mobile-kv">
+                  <span class="mobile-kv__k">Status</span>
+                  <span class="mobile-kv__v">
+                    <span class="status-pill" [attr.data-status]="u.status">
+                      {{ u.status }}
+                    </span>
+                  </span>
+                </div>
+
+                <div class="mobile-kv">
+                  <span class="mobile-kv__k">Last Login</span>
+                  <span class="mobile-kv__v">{{ u.lastLogin || 'Never' }}</span>
+                </div>
+
+                <div class="mobile-kv">
+                  <span class="mobile-kv__k">Archived At</span>
+                  <span class="mobile-kv__v">{{ u.archivedAt ? (u.archivedAt | date:'short') : '—' }}</span>
+                </div>
+              </div>
+
+              <div class="archives-mobile-card__actions">
+                <button type="button" class="btn btn--sm" (click)="restoreUser(u)">
+                  Restore
+                </button>
+              </div>
+            </div>
+          } @empty {
+            <div class="mobile-empty">No archived staff users match your filters.</div>
+          }
         </div>
       </div>
     }

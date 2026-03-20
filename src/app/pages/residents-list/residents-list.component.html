@@ -22,7 +22,7 @@
       <option value="Purok 3">Purok 3</option>
     </select>
   </div>
-  <div class="table-wrap card">
+  <div class="table-wrap card residents-table-wrap">
     <table class="table">
       <thead>
         <tr>
@@ -93,6 +93,80 @@
       </tbody>
     </table>
   </div>
+
+  <div class="residents-mobile-list">
+    @if (canArchiveResidents) {
+      <div class="mobile-select-all">
+        <input
+          type="checkbox"
+          [checked]="allSelected"
+          [indeterminate]="someSelected"
+          (change)="onToggleSelectAll($any($event.target).checked)"
+        />
+      </div>
+    }
+
+    @for (r of filteredResidents; track r.id) {
+      <div class="residents-mobile-card">
+        <div class="residents-mobile-card__top">
+          @if (canArchiveResidents) {
+            <input
+              class="residents-mobile-card__checkbox"
+              type="checkbox"
+              [checked]="isSelected(r)"
+              (change)="onResidentSelectionChange(r, $any($event.target).checked)"
+            />
+          }
+
+          <div class="residents-mobile-card__titles">
+            <div class="residents-mobile-card__primary">
+              <a [routerLink]="[r.id]">{{ r.residentId }}</a>
+            </div>
+            <div class="residents-mobile-card__secondary">{{ r.name }}</div>
+          </div>
+        </div>
+
+        <div class="residents-mobile-card__fields">
+          <div class="mobile-kv">
+            <span class="mobile-kv__k">Age</span>
+            <span class="mobile-kv__v">{{ r.age }}</span>
+          </div>
+
+          <div class="mobile-kv">
+            <span class="mobile-kv__k">Gender</span>
+            <span class="mobile-kv__v">{{ r.gender }}</span>
+          </div>
+
+          <div class="mobile-kv residents-mobile-card__purok">
+            <span class="mobile-kv__k">Purok</span>
+            <span class="mobile-kv__v">
+              <select class="purok-select">
+                <option [value]="r.purok" selected>{{ r.purok }}</option>
+                <option>Purok 1</option>
+                <option>Purok 2</option>
+                <option>Purok 3</option>
+              </select>
+            </span>
+          </div>
+        </div>
+
+        @if (canArchiveResidents) {
+          <div class="residents-mobile-card__actions">
+            <button
+              type="button"
+              class="btn btn--sm btn--outline"
+              [routerLink]="[r.id]"
+            >
+              View
+            </button>
+          </div>
+        }
+      </div>
+    } @empty {
+      <div class="mobile-empty">No residents found matching the filters.</div>
+    }
+  </div>
+
   @if (canArchiveResidents && showBulkActionsBar) {
     <div
       class="bulk-actions-bar"

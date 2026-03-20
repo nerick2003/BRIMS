@@ -6,7 +6,7 @@
     </div>
   </div>
 
-  <div class="table-wrap card">
+  <div class="table-wrap card requests-table-wrap">
     <table class="table">
       <thead>
         <tr>
@@ -71,6 +71,76 @@
         }
       </tbody>
     </table>
+  </div>
+
+  <div class="requests-mobile-list">
+    @if (isAdmin) {
+      <div class="mobile-select-all">
+        <input
+          type="checkbox"
+          [checked]="allSelected"
+          [indeterminate]="someSelected"
+          (change)="onToggleSelectAll($any($event.target).checked)"
+        />
+      </div>
+    }
+
+    @for (r of requests; track r.id) {
+      <div class="requests-mobile-card">
+        <div class="requests-mobile-card__top">
+          @if (isAdmin) {
+            <input
+              class="requests-mobile-card__checkbox"
+              type="checkbox"
+              [checked]="isSelected(r)"
+              (change)="onRequestSelectionChange(r, $any($event.target).checked)"
+            />
+          }
+
+          <div class="requests-mobile-card__titles">
+            <div class="requests-mobile-card__primary">{{ r.type }}</div>
+            <div class="requests-mobile-card__secondary">
+              <span
+                class="badge"
+                [ngClass]="{
+                  'badge--success': r.status === 'Approved',
+                  'badge--warning': r.status === 'Pending' || r.status === 'For Review' || r.status === 'Rejected'
+                }"
+              >
+                {{ r.status }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="requests-mobile-card__fields">
+          <div class="mobile-kv">
+            <span class="mobile-kv__k">Purpose</span>
+            <span class="mobile-kv__v">{{ r.purpose }}</span>
+          </div>
+
+          <div class="mobile-kv">
+            <span class="mobile-kv__k">Date</span>
+            <span class="mobile-kv__v">{{ r.date }}</span>
+          </div>
+        </div>
+
+        <div class="requests-mobile-card__actions">
+          <a [routerLink]="['../requests', r.id]" class="btn btn--sm btn--primary">View Details</a>
+          @if (isAdmin) {
+            <button
+              type="button"
+              class="btn btn--sm btn--outline"
+              (click)="archiveRequest(r)"
+            >
+              Archive
+            </button>
+          }
+        </div>
+      </div>
+    } @empty {
+      <div class="mobile-empty">No requests found.</div>
+    }
   </div>
 
   @if (isAdmin && showBulkActionsBar) {

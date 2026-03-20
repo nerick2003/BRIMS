@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -13,7 +13,7 @@ import Swal from 'sweetalert2';
   templateUrl: './residents-list.component.html',
   styleUrls: ['./residents-list.component.scss'],
 })
-export class ResidentsListComponent {
+export class ResidentsListComponent implements OnDestroy {
   constructor(public data: DataService, public auth: AuthService) {}
   
   search = '';
@@ -74,8 +74,17 @@ export class ResidentsListComponent {
   isBulkActionsBarClosing = false;
   private bulkBarCloseTimeout: ReturnType<typeof setTimeout> | null = null;
 
+  private readonly bulkArchiveFabHideClass = 'bulk-archive-active';
+
   get showBulkActionsBar(): boolean {
     return this.selectedCount > 0 || this.isBulkActionsBarClosing;
+  }
+
+  ngOnDestroy(): void {
+    // Ensure we don't leave the FAB hidden after leaving the page.
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove(this.bulkArchiveFabHideClass);
+    }
   }
 
   get allSelected(): boolean {
@@ -118,6 +127,11 @@ export class ResidentsListComponent {
     this.handleBulkBarSelectionChanged();
   }
 
+  private syncBulkArchiveFabVisibility(): void {
+    if (typeof document === 'undefined' || !document.body) return;
+    document.body.classList.toggle(this.bulkArchiveFabHideClass, this.showBulkActionsBar);
+  }
+
   private handleBulkBarSelectionChanged(): void {
     if (this.selectedCount > 0) {
       if (this.bulkBarCloseTimeout) {
@@ -125,6 +139,7 @@ export class ResidentsListComponent {
         this.bulkBarCloseTimeout = null;
       }
       this.isBulkActionsBarClosing = false;
+      this.syncBulkArchiveFabVisibility();
       return;
     }
 
@@ -133,9 +148,11 @@ export class ResidentsListComponent {
     }
 
     this.isBulkActionsBarClosing = true;
+    this.syncBulkArchiveFabVisibility();
     this.bulkBarCloseTimeout = setTimeout(() => {
       this.isBulkActionsBarClosing = false;
       this.bulkBarCloseTimeout = null;
+      this.syncBulkArchiveFabVisibility();
     }, 180);
   }
 

@@ -479,20 +479,73 @@ export class ReportsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const result = await this.alerts.confirm({
-      title: 'Choose export format',
-      text: 'Export reports as PDF or Excel (CSV)?',
-      confirmButtonText: 'PDF',
-      cancelButtonText: 'Excel (CSV)',
+    const result = await Swal.fire<{
+      period: ReportPeriod;
+      format: ReportFormat;
+    }>({
+      title: 'Export reports',
+      html: `
+        <div class="form-group" style="text-align:left;margin-top:8px;">
+          <label for="swal-report-period">Report period</label>
+          <select id="swal-report-period" class="form-control">
+            <option value="all"${this.reportPeriod === 'all' ? ' selected' : ''}>All</option>
+            <option value="last_15_days"${this.reportPeriod === 'last_15_days' ? ' selected' : ''}>Last 15 days</option>
+            <option value="this_month"${this.reportPeriod === 'this_month' ? ' selected' : ''}>This month</option>
+            <option value="this_semester"${this.reportPeriod === 'this_semester' ? ' selected' : ''}>This semester</option>
+            <option value="this_year"${this.reportPeriod === 'this_year' ? ' selected' : ''}>This year</option>
+          </select>
+        </div>
+        <div class="form-group" style="text-align:left;margin-top:10px;">
+          <label>Format</label>
+          <div style="display:flex;gap:0.75rem;margin-top:6px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.9rem;">
+              <input type="radio" name="swal-report-format" value="pdf" ${this.reportFormat === 'pdf' ? 'checked' : ''}/>
+              <span>PDF</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.9rem;">
+              <input type="radio" name="swal-report-format" value="excel" ${this.reportFormat === 'excel' ? 'checked' : ''}/>
+              <span>Excel (CSV)</span>
+            </label>
+          </div>
+        </div>
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Export',
+      cancelButtonText: 'Cancel',
       icon: 'question',
+      preConfirm: () => {
+        const periodSelect = document.getElementById(
+          'swal-report-period',
+        ) as HTMLSelectElement | null;
+        const checkedFormat = document.querySelector(
+          'input[name="swal-report-format"]:checked',
+        ) as HTMLInputElement | null;
+
+        if (!periodSelect || !checkedFormat) {
+          Swal.showValidationMessage('Please choose period and format.');
+          return;
+        }
+
+        return {
+          period: periodSelect.value as ReportPeriod,
+          format: checkedFormat.value as ReportFormat,
+        };
+      },
     });
 
-    if (result.isConfirmed) {
-      this.reportFormat = 'pdf';
-      this.exportPdf();
-    } else if (result.dismiss === 'cancel') {
-      this.reportFormat = 'excel';
-      this.exportCsv();
+    if (result.isConfirmed && result.value) {
+      this.reportPeriod = result.value.period;
+      this.reportFormat = result.value.format;
+
+      // Rebuild charts that depend on the period
+      this.updateRequestCharts();
+
+      if (this.reportFormat === 'pdf') {
+        this.exportPdf();
+      } else {
+        this.exportCsv();
+      }
     }
   }
 

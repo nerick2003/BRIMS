@@ -3,19 +3,6 @@
 
   <div class="reports-toolbar">
     <div class="toolbar-group">
-      <label class="toolbar-label" for="reportPeriod">Report period</label>
-      <select
-        id="reportPeriod"
-        class="toolbar-select"
-        [(ngModel)]="reportPeriod"
-        (change)="onReportPeriodChange()"
-      >
-        <option value="all">All</option>
-        <option value="last_15_days">Last 15 days</option>
-        <option value="this_month">This month</option>
-        <option value="this_semester">This semester</option>
-        <option value="this_year">This year</option>
-      </select>
       <button
         type="button"
         class="btn btn-primary"

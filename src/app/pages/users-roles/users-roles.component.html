@@ -153,7 +153,7 @@
         </div>
       </div>
 
-      <div class="table-wrap card">
+      <div class="table-wrap card users-table-wrap">
         <table class="table">
           <thead>
             <tr>
@@ -226,6 +226,84 @@
             }
           </tbody>
         </table>
+      </div>
+
+      <div class="users-mobile-list">
+        <div class="mobile-select-all">
+          <input
+            type="checkbox"
+            [checked]="allSelected"
+            [indeterminate]="someSelected"
+            (change)="onToggleSelectAll($any($event.target).checked)"
+          />
+        </div>
+
+        @for (user of filteredUsers; track user.id) {
+          <div class="users-mobile-card">
+            <div class="users-mobile-card__top">
+              <input
+                class="users-mobile-card__checkbox"
+                type="checkbox"
+                [checked]="isSelected(user)"
+                (change)="onUserSelectionChange(user, $any($event.target).checked)"
+              />
+
+              <div class="users-mobile-card__titles">
+                <div class="users-mobile-card__primary">{{ user.name }}</div>
+                <div class="users-mobile-card__secondary">{{ user.email }}</div>
+              </div>
+            </div>
+
+            <div class="users-mobile-card__fields">
+              <div class="mobile-kv">
+                <span class="mobile-kv__k">Role</span>
+                <span class="mobile-kv__v">
+                  <select
+                    class="role-select"
+                    [(ngModel)]="user.role"
+                    (ngModelChange)="updateUserRole(user.id, $event)"
+                  >
+                    @for (role of roles; track role.id) {
+                      <option [value]="role.name">{{ role.name }}</option>
+                    }
+                  </select>
+                </span>
+              </div>
+
+              <div class="mobile-kv">
+                <span class="mobile-kv__k">Status</span>
+                <span class="mobile-kv__v">
+                  <span class="badge" [ngClass]="getStatusBadgeClass(user.status)">
+                    {{ user.status }}
+                  </span>
+                </span>
+              </div>
+
+              <div class="mobile-kv">
+                <span class="mobile-kv__k">Last Login</span>
+                <span class="mobile-kv__v">{{ user.lastLogin || 'Never' }}</span>
+              </div>
+
+              <div class="mobile-kv">
+                <span class="mobile-kv__k">Created</span>
+                <span class="mobile-kv__v">{{ user.createdAt }}</span>
+              </div>
+            </div>
+
+            <div class="users-mobile-card__actions">
+              <button
+                type="button"
+                class="btn btn--sm"
+                [ngClass]="user.status === 'Active' ? 'btn--outline' : 'btn--success'"
+                (click)="toggleUserStatus(user.id)"
+              >
+                {{ user.status === 'Active' ? 'Deactivate' : 'Activate' }}
+              </button>
+            </div>
+          </div>
+        } @empty {
+          <div class="mobile-empty">No users found</div>
+        }
       </div>
       @if (showBulkActionsBar) {
         <div

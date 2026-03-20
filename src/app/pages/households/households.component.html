@@ -17,7 +17,7 @@
       <option value="Purok 3">Purok 3</option>
     </select>
   </div>
-  <div class="table-wrap card">
+  <div class="table-wrap card households-table-wrap">
     <app-loading-state
       [loading]="isLoading"
       [error]="hasError ? errorMessage : null"
@@ -78,6 +78,74 @@
           }
         </tbody>
       </table>
+    }
+  </div>
+
+  <div class="households-mobile-list">
+    <app-loading-state
+      [loading]="isLoading"
+      [error]="hasError ? errorMessage : null"
+      [loadingMessage]="'Loading households...'"
+      [errorTitle]="'Error Loading Data'"
+      [showRetry]="true"
+      [retryLabel]="'Try Again'"
+      (retry)="retryLoad()"
+    ></app-loading-state>
+
+    @if (!isLoading && !hasError) {
+      <div class="mobile-select-all">
+        <input
+          type="checkbox"
+          [checked]="allSelected"
+          [indeterminate]="someSelected"
+          (change)="onToggleSelectAll($any($event.target).checked)"
+        />
+      </div>
+
+      @for (household of filteredHouseholds; track household.id) {
+        <div class="households-mobile-card">
+          <div class="households-mobile-card__top">
+            <input
+              class="households-mobile-card__checkbox"
+              type="checkbox"
+              [checked]="isSelected(household)"
+              (change)="onHouseholdSelectionChange(household, $any($event.target).checked)"
+            />
+
+            <div class="households-mobile-card__titles">
+              <div class="households-mobile-card__primary">{{ household.householdId }}</div>
+              <div class="households-mobile-card__secondary">{{ getHeadOfHousehold(household) }}</div>
+            </div>
+          </div>
+
+          <div class="households-mobile-card__fields">
+            <div class="mobile-kv">
+              <span class="mobile-kv__k">Address</span>
+              <span class="mobile-kv__v">{{ household.address }}</span>
+            </div>
+
+            <div class="mobile-kv">
+              <span class="mobile-kv__k">Purok</span>
+              <span class="mobile-kv__v">{{ household.purok }}</span>
+            </div>
+
+            <div class="mobile-kv">
+              <span class="mobile-kv__k">Members</span>
+              <span class="mobile-kv__v households-mobile-card__members">
+                <span class="badge badge--info">
+                  {{ household.members.length }} member{{ household.members.length !== 1 ? 's' : '' }}
+                </span>
+              </span>
+            </div>
+          </div>
+
+          <div class="households-mobile-card__actions">
+            <a [routerLink]="['../households', household.id]" class="btn btn--sm btn--outline">View</a>
+          </div>
+        </div>
+      } @empty {
+        <div class="mobile-empty">No households found</div>
+      }
     }
   </div>
   @if (showBulkActionsBar) {

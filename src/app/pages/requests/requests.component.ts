@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { DataService, CertificateRequest } from '../../services/data.service';
@@ -48,7 +48,7 @@ import Swal from 'sweetalert2';
         position: fixed;
         left: 0;
         right: 0;
-        bottom: 1.5rem;
+        bottom: 28px;
         display: flex;
         justify-content: center;
         pointer-events: none;
@@ -60,13 +60,15 @@ import Swal from 'sweetalert2';
            Needed not just on mobile; otherwise fixed center button can overlap it
            on tablet/desktop widths. */
         @media (max-width: 1280px) {
-          padding-right: clamp(160px, 18vw, 240px);
+          padding-left: 0;
+          padding-right: 0;
           box-sizing: border-box;
         }
 
         @media (max-width: 640px) {
-          padding-left: 16px;
-          padding-right: clamp(120px, 40vw, 200px);
+          bottom: 20px;
+          padding-left: 0;
+          padding-right: 0;
           box-sizing: border-box;
         }
       }
@@ -83,6 +85,14 @@ import Swal from 'sweetalert2';
         color: #fff;
         text-transform: uppercase;
         letter-spacing: 0.05em;
+
+        @media (max-width: 640px) {
+          min-width: 0;
+          width: 100%;
+          max-width: min(560px, calc(100vw - 32px));
+          padding: 0.85rem 16px;
+          box-sizing: border-box;
+        }
       }
 
       .bulk-actions-bar .bulk-actions-btn:hover {
@@ -120,12 +130,120 @@ import Swal from 'sweetalert2';
           transform: translateY(16px) scale(0.9);
         }
       }
+
+      /* Mobile cards (Option A) */
+      .requests-page .requests-mobile-list {
+        display: none;
+      }
+
+      @media (max-width: 640px) {
+        .requests-page .requests-table-wrap {
+          display: none;
+        }
+
+        .requests-page .requests-mobile-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          margin-top: 1rem;
+          padding-bottom: 110px;
+        }
+
+        .requests-page .mobile-select-all {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 0 6px;
+        }
+
+        .requests-page .requests-mobile-card {
+          background: var(--color-bg-card);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-lg);
+          box-shadow: var(--shadow);
+          padding: 14px;
+        }
+
+        .requests-page .requests-mobile-card__top {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
+        .requests-page .requests-mobile-card__checkbox {
+          margin-top: 3px;
+          flex-shrink: 0;
+        }
+
+        .requests-page .requests-mobile-card__titles {
+          min-width: 0;
+          flex: 1;
+        }
+
+        .requests-page .requests-mobile-card__primary {
+          font-weight: 800;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .requests-page .requests-mobile-card__secondary {
+          margin-top: 4px;
+        }
+
+        .requests-page .requests-mobile-card__fields {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin-top: 12px;
+        }
+
+        .requests-page .mobile-kv {
+          display: flex;
+          justify-content: space-between;
+          align-items: baseline;
+          gap: 12px;
+        }
+
+        .requests-page .mobile-kv__k {
+          color: var(--color-text-muted);
+          font-size: 0.8125rem;
+          flex-shrink: 0;
+        }
+
+        .requests-page .mobile-kv__v {
+          color: var(--color-text);
+          font-weight: 600;
+          text-align: right;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .requests-page .requests-mobile-card__actions {
+          margin-top: 12px;
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .requests-page .mobile-empty {
+          text-align: center;
+          padding: 1.5rem 1rem;
+          color: var(--color-text-muted);
+        }
+      }
     `,
   ],
 })
-export class RequestsComponent {
+export class RequestsComponent implements OnDestroy {
   /** Track selected request IDs for bulk actions (admin only). */
   private selectedRequestIds = new Set<string>();
+
+  private readonly bulkArchiveFabHideClass = 'bulk-archive-active';
 
   constructor(public data: DataService, public auth: AuthService) {}
 
@@ -197,6 +315,7 @@ export class RequestsComponent {
         this.bulkBarCloseTimeout = null;
       }
       this.isBulkActionsBarClosing = false;
+      this.syncBulkArchiveFabVisibility();
       return;
     }
 
@@ -205,10 +324,23 @@ export class RequestsComponent {
     }
 
     this.isBulkActionsBarClosing = true;
+    this.syncBulkArchiveFabVisibility();
     this.bulkBarCloseTimeout = setTimeout(() => {
       this.isBulkActionsBarClosing = false;
       this.bulkBarCloseTimeout = null;
+      this.syncBulkArchiveFabVisibility();
     }, 180);
+  }
+
+  private syncBulkArchiveFabVisibility(): void {
+    if (typeof document === 'undefined' || !document.body) return;
+    document.body.classList.toggle(this.bulkArchiveFabHideClass, this.showBulkActionsBar);
+  }
+
+  ngOnDestroy(): void {
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.classList.remove(this.bulkArchiveFabHideClass);
+    }
   }
 
   async archiveRequest(request: CertificateRequest): Promise<void> {

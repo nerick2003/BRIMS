@@ -62,6 +62,31 @@
   }
 }
 
+/* Mobile: 2 rows tabs (no horizontal scroll) */
+@media (max-width: 640px) {
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    overflow-x: visible;
+    justify-content: center;
+    gap: 0.25rem;
+    /* Remove the outer pill-shaped container on mobile */
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+  }
+
+  .tab-button {
+    flex: 1 1 50%;
+    min-width: 50%;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    white-space: normal;
+    line-height: 1.2;
+  }
+}
+
 .tab-content {
   margin-top: 0.75rem;
 }
@@ -212,3 +237,87 @@
     box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
   }
 }
+/* Mobile: show card/list (Option A) instead of the table. */
+.archives-mobile-list {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .archives-table-wrap {
+    display: none;
+  }
+
+  .archives-mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 1rem;
+    padding-bottom: 110px; /* keep content above fixed bulk actions/FAB where applicable */
+  }
+
+  .archives-mobile-card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 14px;
+  }
+
+  .archives-mobile-card__title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    justify-content: space-between;
+  }
+
+  .archives-mobile-card__subtitle {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .archives-mobile-card__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .archives-mobile-list .mobile-kv {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .archives-mobile-list .mobile-kv__k {
+    color: var(--color-text-muted);
+    font-size: 0.8125rem;
+    flex-shrink: 0;
+  }
+
+  .archives-mobile-list .mobile-kv__v {
+    color: var(--color-text);
+    font-weight: 600;
+    text-align: right;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .archives-mobile-card__actions {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .mobile-empty {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    color: var(--color-text-muted);
+  }
+}
+

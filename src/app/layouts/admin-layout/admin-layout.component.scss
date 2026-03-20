@@ -263,6 +263,18 @@
   padding-top: calc(72px + 24px); /* top bar height + slightly larger gap */
   overflow: auto;
 
+  /* Mobile: hide visible scrollbar while keeping scroll behavior */
+  @media (max-width: 640px) {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+
+    &::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+  }
+
   ::ng-deep router-outlet + * {
     animation: contentFadeIn 0.3s ease-out;
   }

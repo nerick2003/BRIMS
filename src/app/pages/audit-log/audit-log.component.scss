@@ -53,11 +53,61 @@
 }
 
 .table-card {
-  overflow: hidden;
+  /* Allow sticky header to render without being clipped. */
+  overflow: visible;
 }
 
 .table-wrapper {
+  position: relative;
   overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.55) transparent;
+
+  /* Subtle edge fade hinting at horizontal scroll */
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 18px;
+    pointer-events: none;
+    z-index: 0; /* Keep fade behind table text */
+  }
+
+  &::before {
+    left: 0;
+    background: linear-gradient(
+      to right,
+      var(--color-bg-card) 0%,
+      rgba(0, 0, 0, 0) 100%
+    );
+  }
+
+  &::after {
+    right: 0;
+    background: linear-gradient(
+      to left,
+      var(--color-bg-card) 0%,
+      rgba(0, 0, 0, 0) 100%
+    );
+  }
+
+  &::-webkit-scrollbar {
+    height: 10px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, 0.5);
+    border-radius: 999px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }
 
 .empty-message {
@@ -68,8 +118,28 @@
 
 .table {
   width: 100%;
+  table-layout: auto;
   border-collapse: collapse;
   min-width: 640px;
+  position: relative;
+  z-index: 1; /* Ensure table content sits above edge fades */
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 4; /* Above table content + edge fades */
+    white-space: nowrap;
+  }
+
+  /* Keep the first column visible while horizontally scrolling */
+  th.col-date-header,
+  td.col-date {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: var(--color-bg-card);
+    box-shadow: 1px 0 0 var(--color-border);
+  }
 
   th,
   td {
@@ -88,25 +158,34 @@
   tr:hover td {
     background: var(--color-bg);
   }
+
+  tr:hover td.col-date {
+    background: var(--color-bg);
+  }
 }
+
 
 .col-date {
   white-space: nowrap;
   font-size: 0.875rem;
+  min-width: 180px;
 }
 
 .col-user {
   max-width: 180px;
+  min-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .col-action {
   font-weight: 500;
+  min-width: 150px;
 }
 
 .col-details {
   max-width: 280px;
+  min-width: 280px;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--color-text-muted);
@@ -144,5 +223,131 @@
   &[data-category='system'] {
     background: var(--color-bg);
     color: var(--color-text-muted);
+  }
+}
+
+@media (max-width: 768px) {
+  .table-wrapper {
+    /* Keep table aligned with the card padding */
+    margin: 0;
+    padding: 0;
+  }
+}
+
+/* On very small screens, hide the scrollbar thumb (users can still swipe horizontally) */
+@media (max-width: 640px) {
+  .table-wrapper {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+      height: 0;
+    }
+  }
+
+  .table {
+    min-width: 560px;
+  }
+}
+
+/* Mobile: card list instead of horizontally scrolling table */
+.audit-mobile-list {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 1rem;
+}
+
+.audit-mobile-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: var(--shadow);
+  padding: 14px;
+}
+
+.audit-mobile-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.audit-mobile-card__titles {
+  min-width: 0;
+  flex: 1;
+}
+
+.audit-mobile-card__date {
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.audit-mobile-card__user {
+  margin-top: 3px;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.audit-mobile-card__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.audit-mobile-kv {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.audit-mobile-kv__k {
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+  flex-shrink: 0;
+}
+
+.audit-mobile-kv__v {
+  color: var(--color-text);
+  font-weight: 600;
+  text-align: right;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.audit-mobile-kv__v--details {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.audit-mobile-empty {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 640px) {
+  /* Hide desktop table view on mobile */
+  .table-card {
+    display: none;
+  }
+
+  /* Show mobile card list */
+  .audit-mobile-list {
+    display: flex;
   }
 }

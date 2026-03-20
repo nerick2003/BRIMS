@@ -35,7 +35,7 @@
         <table class="table">
           <thead>
             <tr>
-              <th>Date & Time</th>
+              <th class="col-date-header">Date & Time</th>
               <th>User</th>
               <th>Category</th>
               <th>Action</th>
@@ -46,7 +46,10 @@
             @for (entry of filteredLogs(); track entry.id) {
               <tr>
                 <td class="col-date">{{ formatDate(entry.timestamp) }}</td>
-                <td class="col-user">
+                <td
+                  class="col-user"
+                  [attr.title]="entry.userName || entry.userEmail || '—'"
+                >
                   {{ entry.userName || entry.userEmail || '—' }}
                 </td>
                 <td>
@@ -55,12 +58,76 @@
                   </span>
                 </td>
                 <td class="col-action">{{ entry.action }}</td>
-                <td class="col-details">{{ entry.details || entry.entityName || '—' }}</td>
+                <td
+                  class="col-details"
+                  [attr.title]="entry.details || entry.entityName || '—'"
+                >
+                  {{ entry.details || entry.entityName || '—' }}
+                </td>
               </tr>
             }
           </tbody>
         </table>
       }
     </div>
+  </div>
+
+  <div class="audit-mobile-list">
+    @if (filteredLogs().length === 0) {
+      <div class="audit-mobile-empty">
+        No audit log entries match your filters.
+      </div>
+    } @else {
+      @for (entry of filteredLogs(); track entry.id) {
+        <div class="audit-mobile-card">
+          <div class="audit-mobile-card__top">
+            <div class="audit-mobile-card__titles">
+              <div
+                class="audit-mobile-card__date"
+                [attr.title]="formatDate(entry.timestamp)"
+              >
+                {{ formatDate(entry.timestamp) }}
+              </div>
+              <div
+                class="audit-mobile-card__user"
+                [attr.title]="entry.userName || entry.userEmail || '—'"
+              >
+                {{ entry.userName || entry.userEmail || '—' }}
+              </div>
+            </div>
+
+            <span
+              class="badge"
+              [attr.data-category]="entry.category"
+              [attr.title]="categoryLabel(entry.category)"
+            >
+              {{ categoryLabel(entry.category) }}
+            </span>
+          </div>
+
+          <div class="audit-mobile-card__fields">
+            <div class="audit-mobile-kv">
+              <span class="audit-mobile-kv__k">Action</span>
+              <span
+                class="audit-mobile-kv__v"
+                [attr.title]="entry.action"
+              >
+                {{ entry.action }}
+              </span>
+            </div>
+
+            <div class="audit-mobile-kv">
+              <span class="audit-mobile-kv__k">Details</span>
+              <span
+                class="audit-mobile-kv__v audit-mobile-kv__v--details"
+                [attr.title]="entry.details || entry.entityName || '—'"
+              >
+                {{ entry.details || entry.entityName || '—' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      }
+    }
   </div>
 </div>

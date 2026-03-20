@@ -74,6 +74,10 @@ export class HouseholdsComponent implements OnInit, OnDestroy {
     if (this.loadingTimeout) {
       clearTimeout(this.loadingTimeout);
     }
+
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove(this.bulkArchiveFabHideClass);
+    }
   }
 
   retryLoad(): void {
@@ -118,6 +122,8 @@ export class HouseholdsComponent implements OnInit, OnDestroy {
   /** Controls visibility of the animated bulk actions bar. */
   isBulkActionsBarClosing = false;
   private bulkBarCloseTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  private readonly bulkArchiveFabHideClass = 'bulk-archive-active';
 
   get showBulkActionsBar(): boolean {
     return this.selectedCount > 0 || this.isBulkActionsBarClosing;
@@ -172,6 +178,7 @@ export class HouseholdsComponent implements OnInit, OnDestroy {
         this.bulkBarCloseTimeout = null;
       }
       this.isBulkActionsBarClosing = false;
+      this.syncBulkArchiveFabVisibility();
       return;
     }
 
@@ -180,10 +187,17 @@ export class HouseholdsComponent implements OnInit, OnDestroy {
     }
 
     this.isBulkActionsBarClosing = true;
+    this.syncBulkArchiveFabVisibility();
     this.bulkBarCloseTimeout = setTimeout(() => {
       this.isBulkActionsBarClosing = false;
       this.bulkBarCloseTimeout = null;
+      this.syncBulkArchiveFabVisibility();
     }, 180);
+  }
+
+  private syncBulkArchiveFabVisibility(): void {
+    if (typeof document === 'undefined' || !document.body) return;
+    document.body.classList.toggle(this.bulkArchiveFabHideClass, this.showBulkActionsBar);
   }
 
   async archiveSelectedHouseholds(): Promise<void> {

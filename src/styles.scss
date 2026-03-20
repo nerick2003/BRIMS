@@ -171,6 +171,33 @@ body {
   line-height: 1.5;
 }
 
+/* Mobile: hide visible scrollbar for scroll containers */
+@media (max-width: $breakpoint-sm) {
+  html,
+  body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  .content {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+  }
+}
+
 button {
   font-family: inherit;
   cursor: pointer;
@@ -858,6 +885,23 @@ body.swal2-shown .top-bar__icon-button:focus-visible {
 /* Slightly fade the bell glyph itself when SweetAlert is visible so its fill matches the dimmed UI */
 body.swal2-shown .global-notifications__icon {
   opacity: 0.6;
+}
+
+/*
+ * When bulk archive action bar is visible:
+ * - On mobile: keep hiding the FAB (existing behavior) to avoid overlap.
+ * - On desktop/computer view: keep the FAB visible; instead move the bulk actions bar up.
+ */
+@media (max-width: 640px) {
+  body.bulk-archive-active .fab {
+    display: none !important;
+  }
+}
+
+@media (min-width: 641px) {
+  body.bulk-archive-active .bulk-actions-bar {
+    bottom: 30px !important;
+  }
 }
 
 /* Floating action button (add) - lower right, shown on list pages */

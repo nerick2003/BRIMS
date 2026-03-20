@@ -206,6 +206,130 @@
   gap: 1.25rem;
 }
 
+.users-mobile-list {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .roles-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .users-table-wrap {
+    display: none;
+  }
+
+  .users-mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 1rem;
+    padding-bottom: 110px;
+  }
+
+  .mobile-select-all {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 6px;
+  }
+
+  .users-mobile-card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 14px;
+  }
+
+  .users-mobile-card__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .users-mobile-card__checkbox {
+    margin-top: 3px;
+    flex-shrink: 0;
+  }
+
+  .users-mobile-card__titles {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .users-mobile-card__primary {
+    font-weight: 800;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .users-mobile-card__secondary {
+    margin-top: 3px;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .users-mobile-card__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .users-mobile-list .mobile-kv {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .users-mobile-list .mobile-kv__k {
+    color: var(--color-text-muted);
+    font-size: 0.8125rem;
+    flex-shrink: 0;
+  }
+
+  .users-mobile-list .mobile-kv__v {
+    color: var(--color-text);
+    font-weight: 600;
+    text-align: right;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .users-mobile-card__actions {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .users-mobile-card__fields .role-select {
+    max-width: 180px;
+  }
+
+  .users-mobile-card__fields .mobile-kv__v {
+    white-space: normal;
+    text-overflow: clip;
+    overflow: visible;
+  }
+
+  .users-mobile-list .mobile-empty {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    color: var(--color-text-muted);
+  }
+}
+
 @media (min-width: 1200px) {
   .roles-grid {
     /* Force exactly three equal-width columns on desktop */

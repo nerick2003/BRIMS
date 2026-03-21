@@ -21,19 +21,19 @@ import Swal from 'sweetalert2';
       }
 
       .table th:last-child {
-        text-align: left;
+        text-align: center;
         white-space: nowrap;
       }
 
       .actions-cell {
-        text-align: left;
+        text-align: center;
         white-space: nowrap;
       }
 
       .actions-cell__buttons {
-        display: inline-flex;
+        display: flex;
         align-items: center;
-        justify-content: flex-end;
+        justify-content: center;
         gap: 0.5rem;
       }
 
@@ -193,17 +193,18 @@ import Swal from 'sweetalert2';
         }
 
         .requests-page .requests-mobile-card__fields {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px 12px;
           margin-top: 12px;
         }
 
         .requests-page .mobile-kv {
           display: flex;
-          justify-content: space-between;
-          align-items: baseline;
-          gap: 12px;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 4px;
+          min-width: 0;
         }
 
         .requests-page .mobile-kv__k {
@@ -215,19 +216,29 @@ import Swal from 'sweetalert2';
         .requests-page .mobile-kv__v {
           color: var(--color-text);
           font-weight: 600;
-          text-align: right;
+          text-align: left;
           min-width: 0;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
 
+        .requests-page .mobile-kv:first-child {
+          grid-column: 1 / -1;
+        }
+
         .requests-page .requests-mobile-card__actions {
-          margin-top: 12px;
+          margin-top: 14px;
           display: flex;
-          justify-content: flex-end;
-          gap: 8px;
-          flex-wrap: wrap;
+          flex-direction: column;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .requests-page .requests-mobile-card__actions .btn.btn--sm {
+          width: min(100%, 320px);
+          min-width: 0;
+          justify-content: center;
         }
 
         .requests-page .mobile-empty {

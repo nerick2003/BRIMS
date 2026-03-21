@@ -34,12 +34,16 @@ export class StaffLayoutComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Hide mobile hamburger on QR scanner, add forms, household map, resident profile, and request details */
   get showMobileMenuToggle(): boolean {
     const url = this.router.url;
-    if (url.startsWith('/staff/households/map')) return false;
-    if (/^\/staff\/residents\/[^/]+$/.test(url)) return false; // resident profile
-    if (url.startsWith('/staff/requests/') && url !== '/staff/requests') return false;
-    if (url.includes('/qr-scanner')) return false;
-    if (url.includes('/residents/add')) return false;
-    if (url.includes('/households/add')) return false;
+    const path = url.split('?')[0].split('#')[0];
+    const isHouseholdDetailPath = path.includes('/households/') && !path.includes('/households/map') && !path.includes('/households/add') && !path.includes('/edit');
+    if (path.startsWith('/staff/households/map')) return false;
+    if (isHouseholdDetailPath) return false;
+    if (/^\/staff\/households\/[^/]+\/?$/.test(path)) return false; // household detail
+    if (/^\/staff\/residents\/[^/]+$/.test(path)) return false; // resident profile
+    if (path.startsWith('/staff/requests/') && path !== '/staff/requests') return false;
+    if (path.includes('/qr-scanner')) return false;
+    if (path.includes('/residents/add')) return false;
+    if (path.includes('/households/add')) return false;
     return true;
   }
 
@@ -54,13 +58,24 @@ export class StaffLayoutComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Hide profile + theme toggle on forms, resident profile, request detail, QR scanner, edit household */
   get showTopRightUi(): boolean {
     const url = this.router.url;
-    if (url.startsWith('/staff/households/map')) return false; // maximize map space
-    if (url.includes('/residents/add') || url.includes('/households/add')) return false;
-    if (url.includes('/households/') && url.includes('/edit')) return false; // edit household form
-    if (url.includes('/qr-scanner')) return false;
-    if (/^\/staff\/residents\/[^/]+$/.test(url)) return false; // resident profile
-    if (url.startsWith('/staff/requests/') && url !== '/staff/requests') return false; // request detail
+    const path = url.split('?')[0].split('#')[0];
+    const isHouseholdDetailPath = path.includes('/households/') && !path.includes('/households/map') && !path.includes('/households/add') && !path.includes('/edit');
+    if (path.startsWith('/staff/households/map')) return false; // maximize map space
+    if (isHouseholdDetailPath) return false;
+    if (/^\/staff\/households\/[^/]+\/?$/.test(path)) return false; // household detail
+    if (path.includes('/residents/add') || path.includes('/households/add')) return false;
+    if (path.includes('/households/') && path.includes('/edit')) return false; // edit household form
+    if (path.includes('/qr-scanner')) return false;
+    if (/^\/staff\/residents\/[^/]+$/.test(path)) return false; // resident profile
+    if (path.startsWith('/staff/requests/') && path !== '/staff/requests') return false; // request detail
     return true;
+  }
+
+  /** Hide only the bell on household detail pages. */
+  get showNotificationBell(): boolean {
+    const path = this.router.url.split('?')[0].split('#')[0];
+    const isHouseholdDetailPath = path.includes('/households/') && !path.includes('/households/map') && !path.includes('/households/add') && !path.includes('/edit');
+    return !isHouseholdDetailPath;
   }
 
   ngOnInit() {

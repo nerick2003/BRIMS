@@ -56,15 +56,6 @@
             <td class="actions-cell">
               <div class="actions-cell__buttons">
                 <a [routerLink]="['../requests', r.id]" class="btn btn--sm btn--primary">View Details</a>
-                @if (isAdmin) {
-                  <button
-                    type="button"
-                    class="btn btn--sm btn--outline"
-                    (click)="archiveRequest(r)"
-                  >
-                    Archive
-                  </button>
-                }
               </div>
             </td>
           </tr>
@@ -127,15 +118,6 @@
 
         <div class="requests-mobile-card__actions">
           <a [routerLink]="['../requests', r.id]" class="btn btn--sm btn--primary">View Details</a>
-          @if (isAdmin) {
-            <button
-              type="button"
-              class="btn btn--sm btn--outline"
-              (click)="archiveRequest(r)"
-            >
-              Archive
-            </button>
-          }
         </div>
       </div>
     } @empty {

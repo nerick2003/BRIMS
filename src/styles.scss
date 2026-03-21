@@ -196,6 +196,14 @@ body {
       height: 0;
     }
   }
+
+  /* Tighten native dropdown list items on mobile to avoid visible gaps. */
+  select option {
+    margin: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: 1.2;
+  }
 }
 
 button {

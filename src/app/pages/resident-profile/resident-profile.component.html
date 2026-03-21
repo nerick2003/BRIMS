@@ -137,7 +137,7 @@
           <h3 class="section-title">Household Members</h3>
         </div>
         <div class="table-wrap">
-          <table class="table">
+          <table class="table household-members-table">
             <thead>
               <tr>
                 <th>Resident ID</th>
@@ -152,15 +152,34 @@
             <tbody>
               @for (member of household.members; track member.residentId) {
                 <tr>
-                  <td>{{ member.residentId }}</td>
-                  <td>{{ member.name }}</td>
-                  <td>{{ member.age }}</td>
-                  <td>{{ member.gender }}</td>
                   <td>
+                    <span class="mobile-label">Resident ID</span>
+                    <span class="mobile-value">{{ member.residentId }}</span>
+                  </td>
+                  <td>
+                    <span class="mobile-label">Name</span>
+                    <span class="mobile-value">{{ member.name }}</span>
+                  </td>
+                  <td>
+                    <span class="mobile-label">Age</span>
+                    <span class="mobile-value">{{ member.age }}</span>
+                  </td>
+                  <td>
+                    <span class="mobile-label">Gender</span>
+                    <span class="mobile-value">{{ member.gender }}</span>
+                  </td>
+                  <td>
+                    <span class="mobile-label">Relationship</span>
                     <span class="badge badge--info">{{ member.relationship }}</span>
                   </td>
-                  <td>{{ member.birthdate || 'N/A' }}</td>
-                  <td>{{ member.civilStatus || 'N/A' }}</td>
+                  <td>
+                    <span class="mobile-label">Birthdate</span>
+                    <span class="mobile-value">{{ member.birthdate || 'N/A' }}</span>
+                  </td>
+                  <td>
+                    <span class="mobile-label">Civil Status</span>
+                    <span class="mobile-value">{{ member.civilStatus || 'N/A' }}</span>
+                  </td>
                 </tr>
               }
             </tbody>
@@ -180,7 +199,7 @@
     <div class="card">
       <h3 class="section-title">Requests History</h3>
       @if (residentRequests.length > 0) {
-        <table class="table">
+        <table class="table requests-history-table">
           <thead>
             <tr>
               <th>Type</th>
@@ -193,16 +212,27 @@
           <tbody>
             @for (r of residentRequests; track r.id) {
               <tr>
-                <td>{{ r.type }}</td>
-                <td>{{ r.purpose }}</td>
                 <td>
+                  <span class="mobile-label">Type</span>
+                  <span class="mobile-value">{{ r.type }}</span>
+                </td>
+                <td>
+                  <span class="mobile-label">Purpose</span>
+                  <span class="mobile-value">{{ r.purpose }}</span>
+                </td>
+                <td>
+                  <span class="mobile-label">Status</span>
                   <span class="badge" [ngClass]="{
                     'badge--success': r.status === 'Approved',
                     'badge--warning': r.status === 'Pending' || r.status === 'For Review'
                   }">{{ r.status }}</span>
                 </td>
-                <td>{{ r.date }}</td>
                 <td>
+                  <span class="mobile-label">Date</span>
+                  <span class="mobile-value">{{ r.date }}</span>
+                </td>
+                <td>
+                  <span class="mobile-label">Actions</span>
                   <a [routerLink]="getRequestDetailUrl(r.id)" class="btn btn--sm btn--primary">View Details</a>
                 </td>
               </tr>

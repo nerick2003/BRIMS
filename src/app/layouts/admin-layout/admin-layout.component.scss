@@ -419,6 +419,8 @@
   width: 44px;
   height: 44px;
   flex-shrink: 0;
+  position: relative;
+  top: 1px;
 
   @media (max-width: 640px) {
     width: 40px;

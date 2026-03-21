@@ -1,7 +1,16 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, signal, ChangeDetectionStrategy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuditLogService, AuditLogEntry } from '../../services/audit-log.service';
+
+type AuditLogViewEntry = AuditLogEntry & {
+  formattedDate: string;
+  categoryLabel: string;
+  userDisplay: string;
+  detailsDisplay: string;
+  categoryLower: string;
+  searchBlob: string;
+};
 
 @Component({
   selector: 'app-audit-log',
@@ -9,28 +18,23 @@ import { AuditLogService, AuditLogEntry } from '../../services/audit-log.service
   imports: [CommonModule, FormsModule],
   templateUrl: './audit-log.component.html',
   styleUrls: ['./audit-log.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AuditLogComponent implements OnInit {
-  logs = signal<AuditLogEntry[]>([]);
+  logs = signal<AuditLogViewEntry[]>([]);
   categoryFilter = signal<string>('');
   searchText = signal<string>('');
+  isMobileView = signal<boolean>(typeof window !== 'undefined' ? window.innerWidth <= 640 : false);
 
   filteredLogs = computed(() => {
     let list = this.logs();
     const cat = this.categoryFilter().toLowerCase();
     const search = this.searchText().trim().toLowerCase();
     if (cat) {
-      list = list.filter((e) => e.category.toLowerCase() === cat);
+      list = list.filter((e) => e.categoryLower === cat);
     }
     if (search) {
-      list = list.filter(
-        (e) =>
-          e.action.toLowerCase().includes(search) ||
-          (e.userName?.toLowerCase().includes(search)) ||
-          (e.userEmail?.toLowerCase().includes(search)) ||
-          (e.details?.toLowerCase().includes(search)) ||
-          (e.entityName?.toLowerCase().includes(search))
-      );
+      list = list.filter((e) => e.searchBlob.includes(search));
     }
     return list;
   });
@@ -48,7 +52,7 @@ export class AuditLogComponent implements OnInit {
   constructor(private audit: AuditLogService) {}
 
   ngOnInit(): void {
-    this.logs.set(this.audit.getLogs());
+    this.logs.set(this.audit.getLogs().map((entry) => this.toViewEntry(entry)));
   }
 
   onCategoryChange(value: string): void {
@@ -59,7 +63,15 @@ export class AuditLogComponent implements OnInit {
     this.searchText.set(value);
   }
 
-  formatDate(iso: string): string {
+  @HostListener('window:resize')
+  onResize(): void {
+    const next = typeof window !== 'undefined' ? window.innerWidth <= 640 : false;
+    if (this.isMobileView() !== next) {
+      this.isMobileView.set(next);
+    }
+  }
+
+  private formatDate(iso: string): string {
     const d = new Date(iso);
     return d.toLocaleString(undefined, {
       dateStyle: 'short',
@@ -67,8 +79,24 @@ export class AuditLogComponent implements OnInit {
     });
   }
 
-  categoryLabel(category: string): string {
+  private getCategoryLabel(category: string): string {
     const c = this.categories.find((x) => x.value === category);
     return c ? c.label : category;
+  }
+
+  private toViewEntry(entry: AuditLogEntry): AuditLogViewEntry {
+    const userDisplay = entry.userName || entry.userEmail || '—';
+    const detailsDisplay = entry.details || entry.entityName || '—';
+    return {
+      ...entry,
+      formattedDate: this.formatDate(entry.timestamp),
+      categoryLabel: this.getCategoryLabel(entry.category),
+      userDisplay,
+      detailsDisplay,
+      categoryLower: entry.category.toLowerCase(),
+      searchBlob: `${entry.action} ${entry.userName ?? ''} ${entry.userEmail ?? ''} ${entry.details ?? ''} ${entry.entityName ?? ''}`
+        .toLowerCase()
+        .trim(),
+    };
   }
 }

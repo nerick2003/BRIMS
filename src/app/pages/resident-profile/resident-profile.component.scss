@@ -297,6 +297,44 @@
   }
 }
 
+.household-members-table {
+  width: 100%;
+  table-layout: fixed;
+
+  .mobile-label {
+    display: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.2rem;
+  }
+
+  .mobile-value {
+    display: inline;
+  }
+}
+
+.requests-history-table {
+  width: 100%;
+  table-layout: fixed;
+
+  .mobile-label {
+    display: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.2rem;
+  }
+
+  .mobile-value {
+    display: inline;
+  }
+}
+
 // Generate Certificate modal
 .generate-cert-overlay {
   position: fixed;
@@ -426,6 +464,122 @@
 }
 
 @media (max-width: 480px) {
+  .household-members .table-wrap {
+    overflow-x: visible;
+    margin: 0;
+    padding: 0;
+  }
+
+  .household-members-table {
+    width: 100%;
+    min-width: 0 !important;
+    table-layout: auto;
+
+    thead {
+      display: none;
+    }
+
+    tbody {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    tr {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+      padding: 0.85rem;
+      width: 100%;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      background: var(--color-bg);
+    }
+
+    td {
+      display: grid;
+      grid-template-columns: minmax(88px, auto) 1fr;
+      align-items: center;
+      column-gap: 0.65rem;
+      padding: 0;
+      border: 0;
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    .mobile-label {
+      display: inline-block;
+      margin-bottom: 0;
+    }
+
+    .mobile-value,
+    .badge {
+      justify-self: end;
+      text-align: right;
+      max-width: 100%;
+    }
+  }
+
+  .requests-history-table {
+    table-layout: auto;
+
+    thead {
+      display: none;
+    }
+
+    tbody {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    tr {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+      padding: 0.85rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      background: var(--color-bg);
+    }
+
+    td {
+      display: grid;
+      grid-template-columns: minmax(72px, auto) 1fr;
+      align-items: center;
+      column-gap: 0.65rem;
+      padding: 0;
+      border: 0;
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    .mobile-label {
+      display: inline-block;
+      margin-bottom: 0;
+    }
+
+    .mobile-value,
+    .badge {
+      justify-self: end;
+      text-align: right;
+      max-width: 100%;
+    }
+
+    td:last-child {
+      grid-template-columns: 1fr;
+      row-gap: 0.45rem;
+    }
+
+    td:last-child .mobile-label {
+      justify-self: start;
+    }
+
+    td:last-child .btn {
+      width: 100%;
+      justify-content: center;
+      text-align: center;
+    }
+  }
+
   .modal {
     max-width: 100%;
   }

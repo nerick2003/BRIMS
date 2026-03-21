@@ -153,7 +153,9 @@
           </svg>
         }
       </button>
-      <div class="top-bar__bell-slot top-bar__icon-button" aria-hidden="true"></div>
+      @if (showNotificationBell) {
+        <div class="top-bar__bell-slot top-bar__icon-button" aria-hidden="true"></div>
+      }
       <div class="profile-menu" #profileMenu>
         <button
           type="button"

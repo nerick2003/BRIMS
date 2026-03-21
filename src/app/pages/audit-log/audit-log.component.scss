@@ -25,16 +25,28 @@
   gap: 1rem;
 }
 
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.filter-group--search {
+  flex: 1;
+  min-width: 280px;
+}
+
 .filter-label {
   font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-text-muted);
+  font-weight: 600;
+  color: var(--color-primary, #60a5fa);
+  text-shadow: 0 0 10px rgba(96, 165, 250, 0.2);
 }
 
 .filter-select {
   padding: 8px 12px;
   border-radius: var(--radius-md, 8px);
-  border: 1px solid var(--color-border);
+  border: 1px solid color-mix(in srgb, var(--color-primary, #60a5fa) 35%, var(--color-border) 65%);
   background: var(--color-bg);
   color: var(--color-text);
   font-size: 0.9375rem;
@@ -44,7 +56,7 @@
 .filter-input {
   padding: 8px 12px;
   border-radius: var(--radius-md, 8px);
-  border: 1px solid var(--color-border);
+  border: 1px solid color-mix(in srgb, var(--color-primary, #60a5fa) 35%, var(--color-border) 65%);
   background: var(--color-bg);
   color: var(--color-text);
   font-size: 0.9375rem;
@@ -137,8 +149,18 @@
     position: sticky;
     left: 0;
     z-index: 3;
-    background: var(--color-bg-card);
     box-shadow: 1px 0 0 var(--color-border);
+  }
+
+  /* Match other header cells in dark mode/light mode themes. */
+  th.col-date-header {
+    background: var(--color-bg);
+    z-index: 5;
+  }
+
+  /* Keep sticky body cells aligned with card surface. */
+  td.col-date {
+    background: var(--color-bg-card);
   }
 
   th,
@@ -236,6 +258,35 @@
 
 /* On very small screens, hide the scrollbar thumb (users can still swipe horizontally) */
 @media (max-width: 640px) {
+  .filters-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .filter-group .filter-label {
+    width: 62px;
+    flex-shrink: 0;
+  }
+
+  .filter-group .filter-select,
+  .filter-group .filter-input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .filter-group--search {
+    min-width: 0;
+  }
+
+  .filter-group--search .filter-label {
+    white-space: nowrap;
+  }
+
   .table-wrapper {
     scrollbar-width: none;
     -ms-overflow-style: none;

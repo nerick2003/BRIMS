@@ -32,14 +32,16 @@
       <table class="table">
         <thead>
           <tr>
-            <th>
-              <input
-                type="checkbox"
-                [checked]="allSelected"
-                [indeterminate]="someSelected"
-                (change)="onToggleSelectAll($any($event.target).checked)"
-              />
-            </th>
+            @if (canArchiveHouseholds) {
+              <th>
+                <input
+                  type="checkbox"
+                  [checked]="allSelected"
+                  [indeterminate]="someSelected"
+                  (change)="onToggleSelectAll($any($event.target).checked)"
+                />
+              </th>
+            }
             <th>Household ID</th>
             <th>Head of Household</th>
             <th>Address</th>
@@ -51,13 +53,15 @@
         <tbody>
           @for (household of filteredHouseholds; track household.id) {
             <tr>
-              <td>
-                <input
-                  type="checkbox"
-                  [checked]="isSelected(household)"
-                  (change)="onHouseholdSelectionChange(household, $any($event.target).checked)"
-                />
-              </td>
+              @if (canArchiveHouseholds) {
+                <td>
+                  <input
+                    type="checkbox"
+                    [checked]="isSelected(household)"
+                    (change)="onHouseholdSelectionChange(household, $any($event.target).checked)"
+                  />
+                </td>
+              }
               <td><strong>{{ household.householdId }}</strong></td>
               <td>{{ getHeadOfHousehold(household) }}</td>
               <td>{{ household.address }}</td>
@@ -71,7 +75,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="7" style="text-align: center; padding: 2rem; color: var(--color-text-muted);">
+              <td [attr.colspan]="canArchiveHouseholds ? 7 : 6" class="empty-cell">
                 No households found
               </td>
             </tr>
@@ -93,24 +97,28 @@
     ></app-loading-state>
 
     @if (!isLoading && !hasError) {
-      <div class="mobile-select-all">
-        <input
-          type="checkbox"
-          [checked]="allSelected"
-          [indeterminate]="someSelected"
-          (change)="onToggleSelectAll($any($event.target).checked)"
-        />
-      </div>
+      @if (canArchiveHouseholds) {
+        <div class="mobile-select-all">
+          <input
+            type="checkbox"
+            [checked]="allSelected"
+            [indeterminate]="someSelected"
+            (change)="onToggleSelectAll($any($event.target).checked)"
+          />
+        </div>
+      }
 
       @for (household of filteredHouseholds; track household.id) {
         <div class="households-mobile-card">
           <div class="households-mobile-card__top">
-            <input
-              class="households-mobile-card__checkbox"
-              type="checkbox"
-              [checked]="isSelected(household)"
-              (change)="onHouseholdSelectionChange(household, $any($event.target).checked)"
-            />
+            @if (canArchiveHouseholds) {
+              <input
+                class="households-mobile-card__checkbox"
+                type="checkbox"
+                [checked]="isSelected(household)"
+                (change)="onHouseholdSelectionChange(household, $any($event.target).checked)"
+              />
+            }
 
             <div class="households-mobile-card__titles">
               <div class="households-mobile-card__primary">{{ household.householdId }}</div>

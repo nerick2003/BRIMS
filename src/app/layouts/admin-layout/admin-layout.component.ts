@@ -21,7 +21,7 @@ export class AdminLayoutComponent implements OnInit, AfterViewInit, OnDestroy {
   isProfileMenuOpen = false;
   showBackToTop = false;
   currentTime = new Date();
-  private timeInterval: any;
+  private timeInterval?: ReturnType<typeof setInterval>;
   private routerSub?: Subscription;
 
   constructor(
@@ -31,17 +31,14 @@ export class AdminLayoutComponent implements OnInit, AfterViewInit, OnDestroy {
     private alert: AlertService,
   ) {}
 
-  /** Hide mobile hamburger on QR scanner, add forms, household map, resident profile, and request details */
+  /** Hide mobile hamburger on add forms, household map, resident profile, and request details */
   get showMobileMenuToggle(): boolean {
-    const url = this.router.url;
-    const path = url.split('?')[0].split('#')[0];
-    const isHouseholdDetailPath = path.includes('/households/') && !path.includes('/households/map') && !path.includes('/households/add') && !path.includes('/edit');
+    const path = this.currentPath;
     if (path.startsWith('/admin/households/map')) return false;
-    if (isHouseholdDetailPath) return false;
+    if (this.isHouseholdDetailPath(path)) return false;
     if (/^\/admin\/households\/[^/]+\/?$/.test(path)) return false; // household detail
     if (/^\/admin\/residents\/[^/]+$/.test(path)) return false; // resident profile
     if (path.startsWith('/admin/requests/') && path !== '/admin/requests') return false;
-    if (path.includes('/qr-scanner')) return false;
     if (path.includes('/residents/add')) return false;
     if (path.includes('/households/add')) return false;
     return true;
@@ -52,7 +49,6 @@ export class AdminLayoutComponent implements OnInit, AfterViewInit, OnDestroy {
    *
    * We hide it on:
    * - settings pages
-   * - QR scanner
    * - resident / household add forms
    * - household edit form
    * - resident profile detail
@@ -62,15 +58,12 @@ export class AdminLayoutComponent implements OnInit, AfterViewInit, OnDestroy {
    * "Add Resident" and "Add Household" don't show the top bar.
    */
   get showTopRightUi(): boolean {
-    const url = this.router.url;
-    const path = url.split('?')[0].split('#')[0];
-    const isHouseholdDetailPath = path.includes('/households/') && !path.includes('/households/map') && !path.includes('/households/add') && !path.includes('/edit');
+    const path = this.currentPath;
     if (path.startsWith('/admin/households/map')) return false;
-    if (isHouseholdDetailPath) return false;
+    if (this.isHouseholdDetailPath(path)) return false;
     if (/^\/admin\/households\/[^/]+\/?$/.test(path)) return false; // household detail
     if (path.includes('/residents/add') || path.includes('/households/add')) return false;
     if (path.includes('/households/') && path.includes('/edit')) return false;
-    if (path.includes('/qr-scanner')) return false;
     if (/^\/admin\/residents\/[^/]+$/.test(path)) return false; // resident profile
     if (path.startsWith('/admin/requests/') && path !== '/admin/requests') return false; // request detail
     return true;
@@ -78,9 +71,7 @@ export class AdminLayoutComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** Hide only the bell on household detail pages. */
   get showNotificationBell(): boolean {
-    const path = this.router.url.split('?')[0].split('#')[0];
-    const isHouseholdDetailPath = path.includes('/households/') && !path.includes('/households/map') && !path.includes('/households/add') && !path.includes('/edit');
-    return !isHouseholdDetailPath;
+    return !this.isHouseholdDetailPath(this.currentPath);
   }
 
   ngOnInit() {
@@ -207,5 +198,18 @@ export class AdminLayoutComponent implements OnInit, AfterViewInit, OnDestroy {
     const el = this.contentScrollRef?.nativeElement;
     if (el) el.scrollTo({ top: 0, behavior: 'smooth' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  private get currentPath(): string {
+    return this.router.url.split('?')[0].split('#')[0];
+  }
+
+  private isHouseholdDetailPath(path: string): boolean {
+    return (
+      path.includes('/households/') &&
+      !path.includes('/households/map') &&
+      !path.includes('/households/add') &&
+      !path.includes('/edit')
+    );
   }
 }

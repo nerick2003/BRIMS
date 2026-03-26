@@ -26,39 +26,37 @@
     <table class="table">
       <thead>
         <tr>
-          <th>
-            @if (canArchiveResidents) {
+          @if (canArchiveResidents) {
+            <th>
               <input
                 type="checkbox"
                 [checked]="allSelected"
                 [indeterminate]="someSelected"
                 (change)="onToggleSelectAll($any($event.target).checked)"
               />
-            }
-          </th>
+            </th>
+          }
           <th>Resident ID</th>
           <th>Name</th>
           <th>Age</th>
           <th>Gender</th>
           <th>Purok</th>
-          @if (canArchiveResidents) {
-            <th>Actions</th>
-          }
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         @for (r of filteredResidents; track r.id) {
           <tr>
-            <td>
-              @if (canArchiveResidents) {
+            @if (canArchiveResidents) {
+              <td>
                 <input
                   type="checkbox"
                   [checked]="isSelected(r)"
                   (change)="onResidentSelectionChange(r, $any($event.target).checked)"
                 />
-              }
-            </td>
-            <td><a [routerLink]="[r.id]">{{ r.residentId }}</a></td>
+              </td>
+            }
+            <td><a [routerLink]="[r.id]"><strong>{{ r.residentId }}</strong></a></td>
             <td>{{ r.name }}</td>
             <td>{{ r.age }}</td>
             <td>{{ r.gender }}</td>
@@ -70,22 +68,20 @@
                 <option>Purok 3</option>
               </select>
             </td>
-            @if (canArchiveResidents) {
-              <td>
-                <button
-                  type="button"
-                  class="btn btn--sm btn--outline"
-                  [routerLink]="[r.id]"
-                >
-                  View
-                </button>
-              </td>
-            }
+            <td>
+              <button
+                type="button"
+                class="btn btn--sm btn--outline"
+                [routerLink]="[r.id]"
+              >
+                View
+              </button>
+            </td>
           </tr>
         }
         @if (filteredResidents.length === 0) {
           <tr>
-            <td colspan="6" style="text-align: center; padding: 2rem; color: var(--color-text-secondary, #6b7280);">
+            <td [attr.colspan]="canArchiveResidents ? 7 : 6" class="empty-cell">
               No residents found matching the filters.
             </td>
           </tr>
@@ -120,7 +116,7 @@
 
           <div class="residents-mobile-card__titles">
             <div class="residents-mobile-card__primary">
-              <a [routerLink]="[r.id]">{{ r.residentId }}</a>
+              <a [routerLink]="[r.id]"><strong>{{ r.residentId }}</strong></a>
             </div>
             <div class="residents-mobile-card__secondary">{{ r.name }}</div>
           </div>
@@ -150,17 +146,15 @@
           </div>
         </div>
 
-        @if (canArchiveResidents) {
-          <div class="residents-mobile-card__actions">
-            <button
-              type="button"
-              class="btn btn--sm btn--outline"
-              [routerLink]="[r.id]"
-            >
-              View
-            </button>
-          </div>
-        }
+        <div class="residents-mobile-card__actions">
+          <button
+            type="button"
+            class="btn btn--sm btn--outline"
+            [routerLink]="[r.id]"
+          >
+            View
+          </button>
+        </div>
       </div>
     } @empty {
       <div class="mobile-empty">No residents found matching the filters.</div>

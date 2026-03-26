@@ -16,6 +16,16 @@ import Swal from 'sweetalert2';
         color: var(--color-text-muted);
       }
 
+      .requests-page {
+        margin-top: -20px;
+      }
+
+      @media (max-width: 640px) {
+        .requests-page {
+          margin-top: -10px;
+        }
+      }
+
       .table {
         margin-top: 1rem;
       }
@@ -85,6 +95,33 @@ import Swal from 'sweetalert2';
         color: #fff;
         text-transform: uppercase;
         letter-spacing: 0.05em;
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+        transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+          box-shadow 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+          filter 0.2s ease;
+
+        &::after {
+          content: '';
+          position: absolute;
+          top: -120%;
+          left: -35%;
+          width: 40%;
+          height: 320%;
+          background: linear-gradient(
+            115deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.06) 35%,
+            rgba(255, 255, 255, 0.42) 50%,
+            rgba(255, 255, 255, 0.06) 65%,
+            transparent 100%
+          );
+          transform: translateX(-220%) rotate(18deg);
+          transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+          pointer-events: none;
+          z-index: 0;
+        }
 
         @media (max-width: 640px) {
           min-width: 0;
@@ -97,7 +134,13 @@ import Swal from 'sweetalert2';
 
       .bulk-actions-bar .bulk-actions-btn:hover {
         background: linear-gradient(135deg, #1d4ed8, #1e40af);
-        transform: translateY(-1px);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.3);
+        filter: saturate(1.06);
+
+        &::after {
+          transform: translateX(360%) rotate(18deg);
+        }
       }
 
       .bulk-actions-bar .bulk-actions-btn:active {

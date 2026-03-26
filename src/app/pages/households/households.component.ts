@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { DataService, Household } from '../../services/data.service';
+import { AuthService } from '../../services/auth.service';
 import { Subscription } from 'rxjs';
 import { LoadingStateComponent } from '../../shared/loading-state.component';
 import Swal from 'sweetalert2';
@@ -15,7 +16,7 @@ import Swal from 'sweetalert2';
   styleUrls: ['./households.component.scss'],
 })
 export class HouseholdsComponent implements OnInit, OnDestroy {
-  constructor(public data: DataService) {}
+  constructor(public data: DataService, private auth: AuthService) {}
   
   search = '';
   purok = '';
@@ -46,9 +47,7 @@ export class HouseholdsComponent implements OnInit, OnDestroy {
     // Subscribe to households data to detect when it's loaded
     this.subscription = this.data.householdsObservable.subscribe({
       next: (households) => {
-        if (this.loadingTimeout) {
-          clearTimeout(this.loadingTimeout);
-        }
+        this.clearLoadingTimeout();
         if (households.length > 0 || this.data.households.length > 0) {
           // Small delay to show loading state (makes it feel more responsive)
           setTimeout(() => {
@@ -58,9 +57,7 @@ export class HouseholdsComponent implements OnInit, OnDestroy {
         }
       },
       error: (error) => {
-        if (this.loadingTimeout) {
-          clearTimeout(this.loadingTimeout);
-        }
+        this.clearLoadingTimeout();
         this.hasError = true;
         this.isLoading = false;
         this.errorMessage = error?.message || 'An error occurred while loading households. Please try again later.';
@@ -71,9 +68,7 @@ export class HouseholdsComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.subscription?.unsubscribe();
-    if (this.loadingTimeout) {
-      clearTimeout(this.loadingTimeout);
-    }
+    this.clearLoadingTimeout();
 
     if (typeof document !== 'undefined') {
       document.body.classList.remove(this.bulkArchiveFabHideClass);
@@ -125,7 +120,12 @@ export class HouseholdsComponent implements OnInit, OnDestroy {
 
   private readonly bulkArchiveFabHideClass = 'bulk-archive-active';
 
+  get canArchiveHouseholds(): boolean {
+    return this.auth.currentUser?.role === 'admin';
+  }
+
   get showBulkActionsBar(): boolean {
+    if (!this.canArchiveHouseholds) return false;
     return this.selectedCount > 0 || this.isBulkActionsBarClosing;
   }
 
@@ -145,15 +145,17 @@ export class HouseholdsComponent implements OnInit, OnDestroy {
   }
 
   onToggleSelectAll(checked: boolean): void {
+    if (!this.canArchiveHouseholds) return;
     if (checked) {
       this.filteredHouseholds.forEach(h => this.selectedHouseholdIds.add(h.id));
     } else {
-      this.filteredHouseholdIdsClear();
+      this.clearFilteredHouseholdIds();
     }
     this.handleBulkBarSelectionChanged();
   }
 
   onHouseholdSelectionChange(household: Household, checked: boolean): void {
+    if (!this.canArchiveHouseholds) return;
     if (checked) {
       this.selectedHouseholdIds.add(household.id);
     } else {
@@ -162,8 +164,14 @@ export class HouseholdsComponent implements OnInit, OnDestroy {
     this.handleBulkBarSelectionChanged();
   }
 
-  private filteredHouseholdIdsClear(): void {
+  private clearFilteredHouseholdIds(): void {
     this.filteredHouseholds.forEach(h => this.selectedHouseholdIds.delete(h.id));
+  }
+
+  private clearLoadingTimeout(): void {
+    if (!this.loadingTimeout) return;
+    clearTimeout(this.loadingTimeout);
+    this.loadingTimeout = undefined;
   }
 
   private clearSelection(): void {
@@ -201,6 +209,10 @@ export class HouseholdsComponent implements OnInit, OnDestroy {
   }
 
   async archiveSelectedHouseholds(): Promise<void> {
+    if (!this.canArchiveHouseholds) {
+      this.clearSelection();
+      return;
+    }
     if (this.selectedHouseholdIds.size === 0) return;
     const count = this.selectedHouseholdIds.size;
     const result = await Swal.fire({

@@ -3,7 +3,7 @@
     <h1 class="page-title">Household Details</h1>
     <a (click)="navigateToHouseholds(); $event.preventDefault()" href="#" class="back-button">
       <span class="back-button__icon">←</span>
-      <span class="back-button__text">Back to Households</span>
+      <span class="back-button__text">{{ backText }}</span>
     </a>
   </div>
 
@@ -98,5 +98,5 @@
 </div>
 
 <div *ngIf="!household" class="card">
-  <p>Household not found. <a (click)="navigateToHouseholds(); $event.preventDefault()" href="#">Back to Households</a></p>
+  <p>Household not found. <a (click)="navigateToHouseholds(); $event.preventDefault()" href="#">{{ backText }}</a></p>
 </div>

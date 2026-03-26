@@ -25,17 +25,96 @@
 
 .filters {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 1rem;
   flex-wrap: wrap;
   .form-control {
-    padding: 8px 12px;
-    min-width: 140px;
-    &:first-child { min-width: 200px; flex: 1; }
+    height: 44px;
+    padding: 0 14px;
+    min-width: 148px;
+    border: 1px solid color-mix(in srgb, var(--color-border), #000 10%);
+    border-radius: 10px;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-bg-card), #fff 10%) 0%,
+      var(--color-bg-card) 100%
+    );
+    color: var(--color-text);
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+
+    &:focus {
+      outline: none;
+      border-color: color-mix(in srgb, var(--color-primary), #000 15%);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary), transparent 78%);
+    }
+
+    &:first-child {
+      min-width: 220px;
+      flex: 1;
+    }
+  }
+
+  select.form-control {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 38px;
+    cursor: pointer;
+    background-image:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6L8 10L12 6' stroke='%236B7280' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat, no-repeat;
+    background-position: center, right 12px center;
+    background-size: auto, 14px;
+  }
+
+  @media (max-width: 640px) {
+    gap: 8px;
+
+    .form-control {
+      width: 100%;
+      min-width: 0;
+      height: 44px;
+      font-size: 0.92rem;
+      padding: 10px 14px;
+      line-height: 1.2;
+    }
+
+    /* Keep mobile search field from looking collapsed on narrow screens. */
+    input.form-control {
+      min-height: 44px;
+      border-radius: 10px;
+    }
+  }
+}
+
+/* Keep residents filter controls truly dark in dark mode (avoid washed-out gradient look). */
+:host-context([data-theme='dark']) .filters {
+  .form-control {
+    background: var(--color-bg-input) !important;
+    color: var(--color-text-input) !important;
+    border-color: var(--color-input-border) !important;
+  }
+
+  select.form-control {
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6L8 10L12 6' stroke='%239CA3AF' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 12px center !important;
+    background-size: 14px !important;
   }
 }
 
 .table-wrap { overflow-x: auto; padding: 0 !important; }
+
+.empty-cell {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-text-secondary, #6b7280);
+}
+
 .purok-select {
   padding: 4px 8px;
   border: 1px solid var(--color-border);
@@ -125,16 +204,40 @@
   color: #fff !important;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.2s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: -140%;
+    left: -45%;
+    width: 55%;
+    height: 360%;
+    background: linear-gradient(
+      115deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 35%,
+      rgba(255, 255, 255, 0.55) 50%,
+      rgba(255, 255, 255, 0.1) 65%,
+      transparent 100%
+    );
+    transform: translateX(-240%) rotate(18deg);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    z-index: 0;
+    will-change: transform, opacity;
+  }
   @media (max-width: 640px) {
     /* `bulk-actions-bar` already reserves space on the right for the FAB.
        Don't use asymmetric button padding, otherwise the label visually shifts. */
     padding: 0.85rem 16px;
     box-sizing: border-box;
-  }
-}
-
-.bulk-actions-bar .btn.bulk-actions-btn {
-  @media (max-width: 640px) {
     min-width: 0;
     width: 100%;
     max-width: min(560px, calc(100vw - 32px));
@@ -143,12 +246,28 @@
 
 .bulk-actions-bar .btn.bulk-actions-btn:hover {
   background: linear-gradient(135deg, #1d4ed8, #1e40af) !important;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.3);
+  filter: saturate(1.06);
+
+  &::after {
+    opacity: 1;
+    animation: residentsBulkBtnSplash 700ms cubic-bezier(0.22, 1, 0.36, 1) 1 forwards;
+  }
 }
 
 .bulk-actions-bar .btn.bulk-actions-btn:active {
   transform: translateY(0);
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.25);
+}
+
+@keyframes residentsBulkBtnSplash {
+  from {
+    transform: translateX(-240%) rotate(18deg);
+  }
+  to {
+    transform: translateX(380%) rotate(18deg);
+  }
 }
 
 .bulk-actions-bar.bulk-actions-bar--closing {

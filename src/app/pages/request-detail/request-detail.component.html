@@ -3,9 +3,9 @@
     <div class="card">
       <div class="request-header">
         <h1 class="page-title">Request Details</h1>
-        <a routerLink=".." class="back-button">
+        <a [routerLink]="backRoute" class="back-button">
           <span class="back-button__icon">←</span>
-          <span class="back-button__text">Back to Requests</span>
+          <span class="back-button__text">{{ backText }}</span>
         </a>
       </div>
 
@@ -191,9 +191,9 @@
     <div class="card">
       <h1 class="page-title">Request Not Found</h1>
       <p class="muted">The request you're looking for doesn't exist.</p>
-      <a routerLink=".." class="back-button">
+      <a [routerLink]="backRoute" class="back-button">
         <span class="back-button__icon">←</span>
-        <span class="back-button__text">Back to Requests</span>
+        <span class="back-button__text">{{ backText }}</span>
       </a>
     </div>
   }

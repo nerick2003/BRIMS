@@ -449,8 +449,6 @@ import { NotificationTypeLabelPipe } from './services/notification-type-label.pi
   ],
 })
 export class AppComponent implements OnInit, OnDestroy {
-  title = 'Barangay Resident Information Management System';
-
   unreadCount = 0;
   showNotifications = false;
   showGlobalUi = false;
@@ -523,13 +521,12 @@ export class AppComponent implements OnInit, OnDestroy {
   private updateGlobalUi(url: string) {
     const normalizedUrl = url.split('?')[0].split('#')[0];
     // Hide on login page, forgot password page, reset password page,
-    // resident profile, request details page, QR scanner page, 404 error page,
+    // resident profile, request details page, 404 error page,
     // and the full-screen household map page (maximize map space).
     const isStaffOrAdminRequestDetailPage =
       /^\/(staff|admin)\/requests\/[^/]+\/?$/.test(normalizedUrl); // e.g. /staff/requests/1 or /admin/requests/1
     const isResidentProfilePage =
       /^\/(staff|admin)\/residents\/[^/]+\/?$/.test(normalizedUrl); // e.g. /staff/residents/1 or /admin/residents/1
-    const isQrScannerPage = normalizedUrl.includes('/qr-scanner');
     const isHouseholdMapPage =
       /^\/(staff|admin)\/households\/map/.test(normalizedUrl); // e.g. /staff/households/map or /admin/households/map
     const isHouseholdDetailPage =
@@ -550,7 +547,6 @@ export class AppComponent implements OnInit, OnDestroy {
       && !(normalizedUrl.includes('/households/') && normalizedUrl.includes('/edit'))
       && !isResidentProfilePage
       && !isStaffOrAdminRequestDetailPage
-      && !isQrScannerPage
       && !isHouseholdMapPage
       && !isHouseholdDetailPage
       && !isNotFoundRoute;

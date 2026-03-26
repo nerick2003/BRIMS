@@ -33,6 +33,9 @@ export const routes: Routes = [
     loadComponent: () => import('./layouts/admin-layout/admin-layout.component').then(m => m.AdminLayoutComponent),
     children: [
       ...adminStaffSharedChildren,
+      { path: 'archives/requests/:id', loadComponent: () => import('./pages/request-detail/request-detail.component').then(m => m.RequestDetailComponent) },
+      { path: 'archives/residents/:id', loadComponent: () => import('./pages/resident-profile/resident-profile.component').then(m => m.ResidentProfileComponent) },
+      { path: 'archives/households/:id', loadComponent: () => import('./pages/household-detail/household-detail.component').then(m => m.HouseholdDetailComponent) },
       { path: 'users', loadComponent: () => import('./pages/users-roles/users-roles.component').then(m => m.UsersRolesComponent) },
       { path: 'sms', loadComponent: () => import('./pages/admin-sms-broadcast/admin-sms-broadcast.component').then(m => m.AdminSmsBroadcastComponent) },
       { path: 'email', loadComponent: () => import('./pages/admin-email-broadcast/admin-email-broadcast.component').then(m => m.AdminEmailBroadcastComponent) },

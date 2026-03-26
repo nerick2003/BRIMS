@@ -51,6 +51,10 @@ export class HouseholdDetailComponent implements OnInit {
   navigateToResident(residentId: string): void {
     const resident = this.data.getResidentByResidentId(residentId);
     if (resident?.id) {
+      if (this.router.url.startsWith('/admin/archives/households/')) {
+        this.router.navigate(['/admin/archives/residents', resident.id]);
+        return;
+      }
       const isAdminPath = this.router.url.startsWith('/admin');
       const base = isAdminPath ? '/admin' : '/staff';
       this.router.navigate([base, 'residents', resident.id]);
@@ -58,8 +62,18 @@ export class HouseholdDetailComponent implements OnInit {
   }
 
   navigateToHouseholds(): void {
+    if (this.router.url.startsWith('/admin/archives/households/')) {
+      this.router.navigate(['/admin/archives']);
+      return;
+    }
     const isAdminPath = this.router.url.startsWith('/admin');
     const base = isAdminPath ? '/admin' : '/staff';
     this.router.navigate([base, 'households']);
+  }
+
+  get backText(): string {
+    return this.router.url.startsWith('/admin/archives/households/')
+      ? 'Back to Archives'
+      : 'Back to Households';
   }
 }

@@ -1,3 +1,4 @@
 node_modules
 .angular
 serviceAccountKey.json
+.cursor/rules/

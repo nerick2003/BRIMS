@@ -181,8 +181,15 @@ export class ResidentProfileComponent implements OnInit, OnDestroy {
 
   /** Resolve residents list URL so "Back to Residents" works from both admin and staff. */
   get residentsListUrl(): string {
+    if (this.router.url.startsWith('/admin/archives/residents/')) return '/admin/archives';
     const base = this.getBaseRoute();
     return `${base}/residents`;
+  }
+
+  get residentsBackText(): string {
+    return this.router.url.startsWith('/admin/archives/residents/')
+      ? 'Back to Archives'
+      : 'Back to Residents';
   }
 
   /** Get the request detail URL for a given request ID, works from both admin and staff. */

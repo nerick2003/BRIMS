@@ -289,7 +289,7 @@ a {
   font-weight: 500;
   border: none;
   border-radius: var(--radius);
-  transition: background 0.2s ease, box-shadow 0.25s ease, transform 0.2s ease, border-color 0.2s ease, filter 0.2s ease;
+  transition: background 0.2s ease, box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1), transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease, filter 0.2s ease;
   font-size: 0.9375rem;
   white-space: nowrap;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -313,9 +313,9 @@ a {
     color: white;
     &:hover:not(:disabled) {
       background: var(--color-primary-dark);
-      transform: scale(1.03);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25), 0 4px 14px rgba(37, 99, 235, 0.3);
-      filter: brightness(1.05);
+      transform: translateY(-2px);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25), 0 8px 20px rgba(37, 99, 235, 0.24);
+      filter: brightness(1.03);
     }
   }
   &--success {
@@ -323,9 +323,9 @@ a {
     color: white;
     &:hover:not(:disabled) {
       background: var(--color-success-dark);
-      transform: scale(1.03);
-      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.25), 0 4px 14px rgba(22, 163, 74, 0.3);
-      filter: brightness(1.05);
+      transform: translateY(-2px);
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.25), 0 8px 20px rgba(22, 163, 74, 0.22);
+      filter: brightness(1.03);
     }
   }
   &--danger {
@@ -333,9 +333,9 @@ a {
     color: white;
     &:hover:not(:disabled) {
       background: var(--color-danger-dark);
-      transform: scale(1.03);
-      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25), 0 4px 14px rgba(220, 38, 38, 0.3);
-      filter: brightness(1.05);
+      transform: translateY(-2px);
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25), 0 8px 20px rgba(220, 38, 38, 0.22);
+      filter: brightness(1.03);
     }
   }
   &--outline {
@@ -344,7 +344,7 @@ a {
     border: 1px solid var(--color-primary);
     &:hover:not(:disabled) {
       background: var(--color-primary-bg);
-      transform: scale(1.02);
+      transform: translateY(-2px);
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
       border-color: var(--color-primary-light);
     }
@@ -365,6 +365,18 @@ a {
   
   &--full {
     width: 100%;
+  }
+}
+
+/* Keep action-button hover motion subtle in dense table/card layouts. */
+.action-buttons .btn,
+.actions-cell__buttons .btn,
+.archives-mobile-card__actions .btn,
+.requests-mobile-card__actions .btn,
+.residents-mobile-card__actions .btn,
+.users-mobile-card__actions .btn {
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
   }
 }
 
@@ -647,10 +659,6 @@ select.household-map-filter-group__input {
   // (right: 128 + 44 theme + 8 + 44 bell + 8 + 44 profile ≈ 176px)
   padding-right: 176px;
 
-  @media (max-width: 640px) {
-    padding-right: 164px;
-  }
-
   @media (max-width: $breakpoint-sm) {
     flex-direction: column;
     align-items: center;
@@ -676,10 +684,6 @@ select.household-map-filter-group__input {
   
   &:has(.btn--primary) {
     padding-right: 176px;
-    
-    @media (max-width: 640px) {
-      padding-right: 164px;
-    }
   }
   
   @media (max-width: $breakpoint-sm) {
@@ -834,15 +838,13 @@ select.household-map-filter-group__input {
     filter: blur(2px);
     -webkit-filter: blur(2px);
   }
-}
 
-/* On small screens, fully hide the bell while the sidebar drawer is open
-   so it doesn't overlap the slide-in menu. */
-@media (max-width: 640px) {
+  /* On small screens, further dim and disable the bell while drawer is open. */
   body.sidebar-open .global-notifications {
-    transform: none;
-    opacity: 0.35; /* keep visible while disabled */
-    pointer-events: none;
+    @media (max-width: 640px) {
+      opacity: 0.35; /* keep visible while disabled */
+      pointer-events: none;
+    }
   }
 }
 

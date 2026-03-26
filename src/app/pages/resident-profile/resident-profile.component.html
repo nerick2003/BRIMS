@@ -4,7 +4,7 @@
     <div class="page-header__right">
       <a [routerLink]="residentsListUrl" class="back-button">
         <span class="back-button__icon">←</span>
-        <span class="back-button__text">Back to Residents</span>
+        <span class="back-button__text">{{ residentsBackText }}</span>
       </a>
     </div>
   </div>
@@ -52,6 +52,7 @@
             }
           </h2>
           <p class="detail"><strong>Full Name:</strong> {{ resident.name }}</p>
+          <p class="detail"><strong>Age:</strong> {{ resident.age }}</p>
           <p class="detail"><strong>Birthday:</strong> {{ resident.birthdate || 'N/A' }}</p>
           <p class="detail"><strong>Place of Birth:</strong> {{ resident.placeOfBirth || 'N/A' }}</p>
           <p class="detail highlight">
@@ -298,5 +299,5 @@
 }
 
 <div *ngIf="!resident" class="card">
-  <p>Resident not found. <a [routerLink]="residentsListUrl">Back to Residents</a></p>
+  <p>Resident not found. <a [routerLink]="residentsListUrl">{{ residentsBackText }}</a></p>
 </div>

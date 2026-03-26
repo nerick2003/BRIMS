@@ -1,6 +1,6 @@
 import { Component, OnInit, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DataService, CertificateRequest, Resident } from '../../services/data.service';
 import { QrCodeService } from '../../services/qr-code.service';
 import { CertificateGeneratorService } from '../../services/certificate-generator.service';
@@ -19,11 +19,14 @@ export class RequestDetailComponent implements OnInit {
   qrCodeDataUrl: string | null = null;
   showQRCode = false;
   isUpdating = false;
+  backRoute: string[] = ['..'];
+  backText = 'Back to Requests';
 
   @ViewChild('certificateRef') certificateRef?: ElementRef<HTMLDivElement>;
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private data: DataService,
     private qrCodeService: QrCodeService,
     private certificateGenerator: CertificateGeneratorService,
@@ -40,6 +43,25 @@ export class RequestDetailComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.route.queryParamMap.subscribe(queryParams => {
+      const isArchiveDetailRoute = this.router.url.includes('/archives/requests/');
+      if (isArchiveDetailRoute) {
+        this.backRoute = ['/admin/archives'];
+        this.backText = 'Back to Archives';
+        return;
+      }
+
+      const source = queryParams.get('from');
+      if (source === 'archives') {
+        this.backRoute = ['/admin/archives'];
+        this.backText = 'Back to Archives';
+        return;
+      }
+
+      this.backRoute = ['..'];
+      this.backText = 'Back to Requests';
+    });
+
     // Handle route changes
     this.route.paramMap.subscribe(params => {
       const id = params.get('id');

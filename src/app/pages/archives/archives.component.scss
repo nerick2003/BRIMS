@@ -159,8 +159,33 @@
   font-size: 0.875rem;
 }
 
-.archives-page .table tbody td .btn + .btn {
+.archives-page .table thead th:last-child {
+  min-width: 170px;
+}
+
+.archives-page .table tbody td:last-child {
+  min-width: 170px;
+  white-space: nowrap;
+}
+
+.archives-page .table tbody td:last-child .btn {
+  margin: 0;
+}
+
+.archives-page .table tbody td:last-child .btn + .btn {
   margin-left: 0.5rem;
+}
+
+@media (max-width: 1200px) {
+  .archives-page .table thead th:last-child,
+  .archives-page .table tbody td:last-child {
+    min-width: 190px;
+  }
+
+  .archives-page .table tbody td:last-child .btn {
+    padding-inline: 0.7rem;
+    font-size: 0.8rem;
+  }
 }
 
 .empty-cell {

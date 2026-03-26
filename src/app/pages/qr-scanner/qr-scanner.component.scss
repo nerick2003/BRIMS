@@ -1,10 +1,10 @@
 .qr-scanner {
-  padding: 24px;
+  padding: 2px 24px 24px;
   max-width: 100%;
   position: relative;
   
   @media (max-width: 640px) {
-    padding: 16px;
+    padding: 2px 16px 16px;
   }
 }
 
@@ -58,11 +58,15 @@
   text-decoration: none;
   font-size: 0.9375rem;
   font-weight: 500;
-  transition: background 0.2s, filter 0.2s;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, filter 0.2s ease;
   border: 1px solid var(--color-border);
   
   &:hover {
-    filter: brightness(0.95);
+    background: var(--color-bg);
+    border-color: var(--color-primary-light);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+    transform: translateY(-1px);
+    filter: brightness(1.01);
   }
   
   @media (max-width: 640px) {

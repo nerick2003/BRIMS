@@ -2,7 +2,6 @@ import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, retry, throwError, timer } from 'rxjs';
 import { NotificationService } from '../services/notification.service';
-import { ErrorHandlerService } from '../services/error-handler.service';
 import { ApiConfigService } from '../services/api-config.service';
 
 /**
@@ -16,7 +15,6 @@ import { ApiConfigService } from '../services/api-config.service';
  */
 export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const notificationService = inject(NotificationService);
-  const errorHandler = inject(ErrorHandlerService);
   const apiConfig = inject(ApiConfigService);
 
   // Determine retry configuration based on request

@@ -14,6 +14,8 @@ export interface User {
 }
 
 const PROFILE_PICTURE_PREFIX = 'brims_profile_';
+/** Barangay display id (e.g. BRGY-1001) for the logged-in resident — used for bell notifications without waiting on full data merge. */
+const RESIDENT_BARANGAY_KEY = 'brimms_resident_barangay_id';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -35,8 +37,82 @@ export class AuthService {
         // ignore
       }
     }
-    this.data.residentsObservable.subscribe(() => this.syncCurrentUserProfilePicture());
+    this.data.residentsObservable.subscribe(() => {
+      this.syncCurrentUserProfilePicture();
+      this.ensureResidentBarangayIdCached();
+    });
     this.data.usersObservable.subscribe(() => this.syncCurrentUserProfilePicture());
+  }
+
+  /**
+   * Barangay id for notification routing (matches CertificateRequest.residentId).
+   * Prefer value saved at login; else resolve from loaded residents.
+   */
+  getResidentBarangayIdForNotifications(): string | null {
+    const u = this.currentUser;
+    if (!u || u.role !== 'resident') {
+      return null;
+    }
+    const stored = this.getStoredResidentBarangayId();
+    if (stored) {
+      return stored;
+    }
+    const resolved = this.resolveResidentBarangayFromData(u);
+    if (resolved) {
+      this.setStoredResidentBarangayId(resolved);
+      return resolved;
+    }
+    return null;
+  }
+
+  private getStoredResidentBarangayId(): string | null {
+    try {
+      const v = localStorage.getItem(RESIDENT_BARANGAY_KEY);
+      return v?.trim() ? v.trim() : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private setStoredResidentBarangayId(rid: string | undefined | null): void {
+    try {
+      if (!rid?.trim()) {
+        localStorage.removeItem(RESIDENT_BARANGAY_KEY);
+      } else {
+        localStorage.setItem(RESIDENT_BARANGAY_KEY, rid.trim());
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  private resolveResidentBarangayFromData(user: User): string | undefined {
+    const byId = this.data.getResidentById(user.id);
+    if (byId?.residentId?.trim()) {
+      return byId.residentId.trim();
+    }
+    const byEmail = this.data.residents.find(
+      r => r.email?.trim().toLowerCase() === user.email?.trim().toLowerCase(),
+    );
+    if (byEmail?.residentId?.trim()) {
+      return byEmail.residentId.trim();
+    }
+    return undefined;
+  }
+
+  /** When Firestore finishes loading, attach barangay id if the user logged in before residents arrived. */
+  private ensureResidentBarangayIdCached(): void {
+    const u = this.currentUser;
+    if (!u || u.role !== 'resident') {
+      return;
+    }
+    if (this.getStoredResidentBarangayId()) {
+      return;
+    }
+    const rid = this.resolveResidentBarangayFromData(u);
+    if (rid) {
+      this.setStoredResidentBarangayId(rid);
+    }
   }
 
   private syncCurrentUserProfilePicture(): void {
@@ -78,6 +154,7 @@ export class AuthService {
         role: 'resident',
       };
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+      this.setStoredResidentBarangayId(resident.residentId);
       this.currentProfilePicture$.next(resident.profilePicture ?? this.getStoredProfilePicture(user.id));
       this.audit.log({
         action: 'Login',
@@ -106,6 +183,7 @@ export class AuthService {
         role,
       };
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+      this.setStoredResidentBarangayId(null);
       this.currentProfilePicture$.next(staffOrAdmin.profilePicture ?? this.getStoredProfilePicture(user.id));
       this.audit.log({
         action: 'Login',
@@ -122,6 +200,7 @@ export class AuthService {
     if (normalizedEmail === 'staff@barangay.gov' && pwd === 'staff123') {
       const user: User = { id: '1', name: 'Staff User', email: normalizedEmail, role: 'staff' };
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+      this.setStoredResidentBarangayId(null);
       this.currentProfilePicture$.next(this.getStoredProfilePicture(user.id));
       this.audit.log({
         action: 'Login',
@@ -136,6 +215,7 @@ export class AuthService {
     if (normalizedEmail === 'admin@barangay.gov' && pwd === 'admin123') {
       const user: User = { id: '4', name: 'Admin User', email: normalizedEmail, role: 'admin' };
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+      this.setStoredResidentBarangayId(null);
       this.currentProfilePicture$.next(this.getStoredProfilePicture(user.id));
       this.audit.log({
         action: 'Login',
@@ -150,6 +230,12 @@ export class AuthService {
     if (normalizedEmail === 'resident@email.com' && pwd === 'resident123') {
       const user: User = { id: '1', name: 'Juan Dela Cruz', email: normalizedEmail, role: 'resident' };
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+      const demoRid =
+        this.data.getResidentById('1')?.residentId?.trim()
+        ?? this.data.residents.find(r => r.email?.trim().toLowerCase() === normalizedEmail)?.residentId
+          ?.trim()
+        ?? 'BRGY-1001';
+      this.setStoredResidentBarangayId(demoRid);
       this.currentProfilePicture$.next(this.getStoredProfilePicture(user.id));
       this.audit.log({
         action: 'Login',
@@ -178,6 +264,7 @@ export class AuthService {
       });
     }
     localStorage.removeItem(this.STORAGE_KEY);
+    this.setStoredResidentBarangayId(null);
     // Also clear any legacy sessionStorage value if present
     try {
       sessionStorage.removeItem(this.STORAGE_KEY);

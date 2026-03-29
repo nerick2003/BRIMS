@@ -3,6 +3,7 @@ import { BehaviorSubject, firstValueFrom } from 'rxjs';
 import { IDatabaseService, DATABASE_SERVICE } from './database.interface';
 import { AuditLogService } from './audit-log.service';
 import { NotificationService } from './notification.service';
+import { FirestorePortalNotificationsService } from './firestore-portal-notifications.service';
 import { ErrorHandlerService } from './error-handler.service';
 
 export interface Resident {
@@ -144,6 +145,7 @@ export class DataService {
   private roles$ = new BehaviorSubject<Role[]>([]);
 
   private notificationService = inject(NotificationService);
+  private portalNotifications = inject(FirestorePortalNotificationsService);
   private errorHandler = inject(ErrorHandlerService);
 
   constructor(
@@ -178,6 +180,7 @@ export class DataService {
       this.database.getRequests().subscribe(requests => {
         this.requests = requests;
         this.requests$.next(requests);
+        this.syncStaffPendingRequestNotifications(requests);
       });
 
       this.database.getHouseholds().subscribe(households => {
@@ -352,6 +355,36 @@ export class DataService {
     return this.requests.filter(r => !!r.archived);
   }
 
+  /**
+   * Ensures admin/staff get a bell item for every pending request that already existed in the database
+   * (not only for ones created in this browser session via addRequest).
+   */
+  private syncStaffPendingRequestNotifications(requests: CertificateRequest[]): void {
+    const notified = new Set(this.notificationService.getStaffNotifiedRequestIds());
+    for (const r of requests) {
+      if (r.archived) {
+        continue;
+      }
+      if (r.status !== 'Pending' && r.status !== 'For Review') {
+        continue;
+      }
+      if (notified.has(r.id)) {
+        continue;
+      }
+      const resident = r.residentId ? this.getResidentByResidentId(r.residentId) : undefined;
+      const who = resident?.name ?? 'A resident';
+      this.notificationService.notifyAdminAndStaff({
+        type: 'info',
+        title: 'New certificate request',
+        message: `${who} submitted ${r.type} (Request #${r.id}).`,
+        actionRoute: ['requests', r.id],
+        linkRequestId: r.id,
+      });
+      notified.add(r.id);
+      this.notificationService.markStaffNotifiedAboutRequest(r.id);
+    }
+  }
+
   addRequest(request: CertificateRequest): void {
     this.requests.push(request);
     this.audit.log({
@@ -361,7 +394,33 @@ export class DataService {
       entityId: request.id,
     });
     this.requests$.next(this.requests);
-    
+
+    if (request.status === 'Pending') {
+      const resident = request.residentId
+        ? this.getResidentByResidentId(request.residentId)
+        : undefined;
+      const who = resident?.name ?? 'A resident';
+      this.portalNotifications
+        .createStaffAlert({
+          type: 'info',
+          title: 'New certificate request',
+          message: `${who} submitted ${request.type} (Request #${request.id}).`,
+          linkRequestId: request.id,
+        })
+        .subscribe({
+          error: () => {
+            this.notificationService.notifyAdminAndStaff({
+              type: 'info',
+              title: 'New certificate request',
+              message: `${who} submitted ${request.type} (Request #${request.id}).`,
+              actionRoute: ['requests', request.id],
+              linkRequestId: request.id,
+            });
+          },
+        });
+      this.notificationService.markStaffNotifiedAboutRequest(request.id);
+    }
+
     this.database.addRequest(request).subscribe({
       next: () => {
         // No-op: cache is already updated optimistically
@@ -383,7 +442,10 @@ export class DataService {
   updateRequest(id: string, updates: Partial<CertificateRequest>): void {
     const request = this.requests.find((r) => r.id === id);
     if (!request) return;
-    
+
+    const prevStatus = request.status;
+    const barangayForNotify = request.residentId;
+
     if (updates.status) {
       this.audit.log({
         action: 'Update request status',
@@ -394,6 +456,41 @@ export class DataService {
     }
     Object.assign(request, updates);
     this.requests$.next(this.requests);
+
+    const newStatus = updates.status;
+    if (
+      (newStatus === 'Approved' || newStatus === 'Rejected') &&
+      newStatus !== prevStatus &&
+      barangayForNotify
+    ) {
+      const isApproved = newStatus === 'Approved';
+      const resident = this.getResidentByResidentId(barangayForNotify);
+      this.portalNotifications
+        .createResidentAlert({
+          residentBarangayId: barangayForNotify,
+          type: isApproved ? 'success' : 'warning',
+          title: isApproved ? 'Request approved' : 'Request declined',
+          message: isApproved
+            ? `Your ${request.type} request (#${id}) was approved.`
+            : `Your ${request.type} request (#${id}) was declined.`,
+          linkRequestId: id,
+        })
+        .subscribe({
+          error: () => {
+            this.notificationService.notifyResidentForCertificateDecision({
+              residentBarangayId: barangayForNotify,
+              alsoNotifyUserIds: resident ? [resident.id] : undefined,
+              type: isApproved ? 'success' : 'warning',
+              title: isApproved ? 'Request approved' : 'Request declined',
+              message: isApproved
+                ? `Your ${request.type} request (#${id}) was approved.`
+                : `Your ${request.type} request (#${id}) was declined.`,
+              actionRoute: ['requests', id],
+              linkRequestId: id,
+            });
+          },
+        });
+    }
     
     this.database.updateRequest(id, updates).subscribe({
       next: () => {

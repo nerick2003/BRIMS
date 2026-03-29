@@ -35,6 +35,11 @@
   --color-input-border: #e2e8f0;
   --color-input-placeholder: #64748b;
 
+  /* Native <select> fields (minimal pill-ish control; chevron matches input text) */
+  --select-border-radius: 10px;
+  --color-select-border: #d1d5db;
+  --color-select-border-hover: #94a3b8;
+
   /* Sidebar */
   --sidebar-bg: #1e3a5f;
   --sidebar-active: #2563eb;
@@ -61,6 +66,10 @@
 
   /* Notification bell icon: black in light theme */
   --notification-icon-filter: brightness(0);
+
+  /* Dark/light palette cross-fade */
+  --theme-transition-duration: 0.32s;
+  --theme-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Dark theme */
@@ -110,6 +119,8 @@
   --color-text-input: #1e293b;
   --color-input-border: #e2e8f0;
   --color-input-placeholder: #64748b;
+  --color-select-border: #cbd5e1;
+  --color-select-border-hover: #94a3b8;
 
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -118,28 +129,37 @@
   --notification-icon-filter: brightness(0) invert(1);
 }
 
-/* Dark mode: force inputs, selects, textareas to use light background so they stay visible (override component styles) */
+/* Dark mode: force inputs & textareas to light “paper” fields; selects use --color-select-border */
 [data-theme='dark'] input,
-[data-theme='dark'] select,
 [data-theme='dark'] textarea,
-[data-theme='dark'] .form-control {
+[data-theme='dark'] .form-control:not(select) {
   background-color: var(--color-bg-input) !important;
   color: var(--color-text-input) !important;
   border-color: var(--color-input-border) !important;
+}
+
+[data-theme='dark'] select {
+  background-color: var(--color-bg-input) !important;
+  color: var(--color-text-input) !important;
+  border-color: var(--color-select-border) !important;
+  color-scheme: light; /* native dropdown list renders light (Chrome, Edge) */
 }
 [data-theme='dark'] input::placeholder,
 [data-theme='dark'] textarea::placeholder {
   color: var(--color-input-placeholder) !important;
 }
 
-/* Force native select dropdown list to render in light mode (Chrome, Edge, etc.) */
-[data-theme='dark'] select {
-  color-scheme: light;
-}
 /* Fallback: style option elements so dropdown list is light (where supported) */
 [data-theme='dark'] select option {
   background-color: #f8fafc;
   color: #1e293b;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --theme-transition-duration: 0s;
+    --theme-transition-easing: linear;
+  }
 }
 
 /* Responsive Breakpoints */
@@ -157,7 +177,7 @@ $breakpoint-xl: 1280px;
 html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
-  
+
   @media (max-width: $breakpoint-sm) {
     font-size: 14px;
   }
@@ -169,6 +189,26 @@ body {
   color: var(--color-text);
   background: var(--color-bg);
   line-height: 1.5;
+}
+
+/* Palette cross-fade only while toggling theme (avoids slowing hover/focus micro-interactions) */
+html.theme-transition-active,
+html.theme-transition-active *,
+html.theme-transition-active *::before,
+html.theme-transition-active *::after {
+  transition-property: background-color, background, color, border-color, box-shadow, fill, stroke,
+    filter, outline-color;
+  transition-duration: var(--theme-transition-duration);
+  transition-timing-function: var(--theme-transition-easing);
+}
+
+/* Root cross-fade when theme is toggled via View Transitions API (Chromium, Safari 18+, modern Firefox) */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: var(--theme-transition-duration);
+    animation-timing-function: var(--theme-transition-easing);
+  }
 }
 
 /* Mobile: hide visible scrollbar for scroll containers */
@@ -474,8 +514,8 @@ body.swal2-shown > *:not(.swal2-container) {
   transition: filter 0.2s ease, -webkit-filter 0.2s ease;
 }
 
-/* Dropdown / select - consistent look across the app (!important so component styles don't hide arrow) */
-$select-arrow-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+/* Dropdown / select - minimalist field; !important beats encapsulated component .form-control rules */
+$select-arrow-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%231e293b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
 
 select,
 select.form-control,
@@ -488,18 +528,23 @@ select.household-map-filter-group__input {
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
   cursor: pointer;
+  font-family: inherit;
+  color: var(--color-text-input) !important;
+  background-color: var(--color-bg-input) !important;
+  border: 1px solid var(--color-select-border) !important;
+  border-radius: var(--select-border-radius) !important;
   background-image: $select-arrow-svg !important;
   background-repeat: no-repeat !important;
-  background-position: right 12px center !important;
+  background-position: right 14px center !important;
   background-size: 18px !important;
-  padding-right: 42px !important;
+  padding-right: 44px !important;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 select,
 select.form-control {
-  min-height: 42px;
-  padding: 10px 42px 10px 14px !important;
+  min-height: 44px;
+  padding: 11px 44px 11px 18px !important;
 }
 
 select:hover,
@@ -508,7 +553,7 @@ select.filter-select:hover,
 select.role-select:hover,
 select.purok-select:hover,
 select.household-map-filter-group__input:hover {
-  border-color: var(--color-primary-light);
+  border-color: var(--color-select-border-hover) !important;
 }
 
 select:focus,
@@ -518,32 +563,32 @@ select.role-select:focus,
 select.purok-select:focus,
 select.household-map-filter-group__input:focus {
   outline: none;
-  border-color: var(--color-primary);
+  border-color: var(--color-primary) !important;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
 /* Small variant for inline filters */
 select.form-control--sm {
-  min-height: 36px;
-  padding: 6px 34px 6px 10px !important;
-  padding-right: 34px !important;
-  background-position: right 8px center !important;
+  min-height: 40px;
+  padding: 8px 40px 8px 16px !important;
+  padding-right: 40px !important;
+  background-position: right 12px center !important;
   background-size: 16px !important;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
 }
 
-/* Component-specific selects: keep arrow, slightly smaller padding */
+/* Component-specific selects: keep arrow inset consistent */
 select.filter-select,
 select.role-select,
 select.purok-select {
-  padding-right: 38px !important;
-  background-position: right 10px center !important;
+  padding-right: 40px !important;
+  background-position: right 12px center !important;
   background-size: 16px !important;
 }
 
 select.household-map-filter-group__input {
-  padding-right: 40px !important;
-  background-position: right 10px center !important;
+  padding-right: 42px !important;
+  background-position: right 12px center !important;
 }
 
 .form-group {
@@ -586,6 +631,7 @@ select.household-map-filter-group__input {
   border-radius: 9999px;
   &--success { background: var(--color-success-bg); color: var(--color-success); }
   &--warning { background: var(--color-warning-bg); color: var(--color-warning); }
+  &--danger { background: var(--color-danger-bg); color: var(--color-danger); }
   &--info { background: var(--color-primary-bg); color: var(--color-primary); }
 }
 

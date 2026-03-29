@@ -31,7 +31,17 @@
         <div class="request-row">
           <div class="request-info">
             <span class="request-type">{{ r.type }}</span>
-            <span class="request-meta">{{ r.status }} · {{ r.date }}</span>
+            <div class="request-meta">
+              <span
+                class="badge"
+                [ngClass]="{
+                  'badge--success': r.status === 'Approved',
+                  'badge--warning': r.status === 'Pending' || r.status === 'For Review',
+                  'badge--danger': r.status === 'Rejected'
+                }"
+              >{{ r.status }}</span>
+              <span class="request-meta__date">{{ r.date }}</span>
+            </div>
           </div>
           <a routerLink="/resident/requests" class="btn btn--success btn--sm">See Status</a>
         </div>

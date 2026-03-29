@@ -112,11 +112,11 @@
           </svg>
         }
       </button>
-      <div class="top-bar__bell-slot" aria-hidden="true"></div>
+      <div class="top-bar__bell-slot top-bar__icon-button" aria-hidden="true"></div>
       <div class="profile-menu" #profileMenu>
         <button
           type="button"
-          class="profile-menu__trigger"
+          class="profile-menu__trigger top-bar__icon-button"
           [attr.aria-label]="'Profile menu'"
           [attr.aria-expanded]="isProfileMenuOpen"
           (click)="toggleProfileMenu()"

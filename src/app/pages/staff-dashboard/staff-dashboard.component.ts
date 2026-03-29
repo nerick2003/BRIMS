@@ -20,22 +20,23 @@ export class StaffDashboardComponent {
   stats = this.data.getStats();
   
   get recentRequests(): CertificateRequest[] {
-    // Get the most recent requests, prioritizing pending and for review
     const sorted = [...this.data.getActiveRequests()].sort((a, b) => {
-      // Prioritize by status: For Review > Pending > Approved
-      const statusPriority: Record<CertificateRequest['status'], number> = { 
-        'For Review': 3, 
-        'Pending': 2, 
-        'Approved': 1,
-        'Rejected': 0
+      // Admin dashboard: strictly newest first
+      if (this.auth.currentUser?.role === 'admin') {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      }
+      // Staff: prioritize actionable statuses, then newest
+      const statusPriority: Record<CertificateRequest['status'], number> = {
+        'For Review': 3,
+        Pending: 2,
+        Approved: 1,
+        Rejected: 0,
       };
       const priorityDiff = statusPriority[b.status] - statusPriority[a.status];
       if (priorityDiff !== 0) return priorityDiff;
-      
-      // Then sort by date (most recent first)
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
-    
-    return sorted.slice(0, 6); // Show up to 6 recent requests
+
+    return sorted.slice(0, 6);
   }
 }

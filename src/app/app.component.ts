@@ -4,6 +4,12 @@ import { DatePipe, NgClass } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { AppNotification, NotificationService } from './services/notification.service';
 import { NotificationTypeLabelPipe } from './services/notification-type-label.pipe';
+import { AuthService } from './services/auth.service';
+import { DataService } from './services/data.service';
+import {
+  FirestorePortalNotificationsService,
+  type PortalNotificationRow,
+} from './services/firestore-portal-notifications.service';
 
 @Component({
   selector: 'app-root',
@@ -40,7 +46,19 @@ import { NotificationTypeLabelPipe } from './services/notification-type-label.pi
         </button>
 
         @if (showNotifications) {
-          <div class="global-notifications__panel" role="dialog" [attr.aria-label]="'Notifications'">
+          <button
+            class="global-notifications__backdrop"
+            type="button"
+            (click)="closeNotifications()"
+            [attr.aria-label]="'Close notifications'"
+            tabindex="-1"
+          ></button>
+          <div
+            class="global-notifications__panel"
+            role="dialog"
+            [attr.aria-label]="'Notifications'"
+            (click)="$event.stopPropagation()"
+          >
             <div class="global-notifications__panelHeader">
               <span class="global-notifications__panelTitle">Notifications</span>
               @if (notifications.length) {
@@ -74,9 +92,10 @@ import { NotificationTypeLabelPipe } from './services/notification-type-label.pi
                         'global-notifications__item--type-success': n.type === 'success',
                         'global-notifications__item--type-error': n.type === 'error',
                         'global-notifications__item--type-warning': n.type === 'warning',
-                        'global-notifications__item--type-info': n.type === 'info'
+                        'global-notifications__item--type-info': n.type === 'info',
+                        'global-notifications__item--hasRoute': notificationHasRequestLink(n)
                       }"
-                      (click)="markAsRead(n.id)"
+                      (click)="onNotificationClick(n, $event)"
                     >
                       <div class="global-notifications__itemHeader">
                         <span class="global-notifications__itemTitle">
@@ -95,13 +114,6 @@ import { NotificationTypeLabelPipe } from './services/notification-type-label.pi
               }
             </div>
           </div>
-          <button
-            class="global-notifications__backdrop"
-            type="button"
-            (click)="closeNotifications()"
-            [attr.aria-label]="'Close notifications'"
-            tabindex="-1"
-          ></button>
         }
       </div>
     }
@@ -117,6 +129,7 @@ import { NotificationTypeLabelPipe } from './services/notification-type-label.pi
         top: 14px; /* centered in 72px top bar: (72 - 44) / 2 */
         right: 76px; /* left of profile icon (24 + 44 + 8) */
         z-index: 1100;
+        isolation: isolate;
         transition: transform 0.3s ease-out, filter 0.3s ease-out;
         
         @media (max-width: 640px) {
@@ -226,7 +239,7 @@ import { NotificationTypeLabelPipe } from './services/notification-type-label.pi
         box-shadow: var(--shadow-lg);
         overflow: hidden;
         max-height: calc(100vh - 80px);
-        z-index: 1102;
+        z-index: 2;
         animation: globalNotificationsPanelIn 0.18s ease-out;
         display: flex;
         flex-direction: column;
@@ -437,13 +450,21 @@ import { NotificationTypeLabelPipe } from './services/notification-type-label.pi
         border-left-color: var(--color-primary);
       }
 
+      .global-notifications__item--hasRoute .global-notifications__itemTitle::after {
+        content: ' →';
+        font-weight: 500;
+        color: var(--color-primary, #2563eb);
+      }
+
       .global-notifications__backdrop {
         position: fixed;
         inset: 0;
         background: transparent;
         border: none;
         cursor: default;
-        z-index: 1101;
+        z-index: 1;
+        padding: 0;
+        margin: 0;
       }
     `,
   ],
@@ -455,27 +476,39 @@ export class AppComponent implements OnInit, OnDestroy {
   notifications: AppNotification[] = [];
 
   private notificationsSub?: Subscription;
+  private residentsDataSub?: Subscription;
+  private firestorePortalSub?: Subscription;
+  private firestoreBellBindKey = '';
 
   constructor(
     private router: Router,
     private notificationsService: NotificationService,
+    private auth: AuthService,
+    private data: DataService,
+    private firestorePortal: FirestorePortalNotificationsService,
   ) {
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
         this.updateGlobalUi(event.urlAfterRedirects);
+        this.refreshNotifications();
       }
     });
   }
 
   ngOnInit(): void {
-    this.notificationsSub = this.notificationsService.notifications$.subscribe(list => {
-      this.notifications = list;
-      this.unreadCount = this.notificationsService.unreadCount;
+    this.notificationsSub = this.notificationsService.notifications$.subscribe(() => {
+      this.refreshNotifications();
     });
+    this.residentsDataSub = this.data.residentsObservable.subscribe(() => {
+      this.refreshNotifications();
+    });
+    this.refreshNotifications();
   }
 
   ngOnDestroy(): void {
     this.notificationsSub?.unsubscribe();
+    this.residentsDataSub?.unsubscribe();
+    this.firestorePortalSub?.unsubscribe();
   }
 
   toggleNotifications() {
@@ -490,8 +523,109 @@ export class AppComponent implements OnInit, OnDestroy {
     this.notificationsService.markAsRead(id);
   }
 
+  notificationHasRequestLink(n: AppNotification): boolean {
+    return !!(
+      n.linkRequestId?.trim() ||
+      (n.actionRoute?.length === 2 && n.actionRoute[0] === 'requests') ||
+      this.parseRequestIdFromMessage(n.message)
+    );
+  }
+
+  onNotificationClick(n: AppNotification, ev?: Event): void {
+    ev?.stopPropagation();
+    this.notificationsService.markAsRead(n.id);
+    const user = this.auth.currentUser;
+    const role = user?.role;
+    const reqId =
+      n.linkRequestId?.trim() ||
+      (n.actionRoute?.[0] === 'requests' && n.actionRoute?.[1] ? String(n.actionRoute[1]) : '') ||
+      this.parseRequestIdFromMessage(n.message);
+
+    if (reqId && (role === 'admin' || role === 'staff')) {
+      void this.router.navigateByUrl(`/${role}/requests/${encodeURIComponent(reqId)}`);
+    } else if (reqId && role === 'resident') {
+      void this.router.navigateByUrl(`/resident/requests/${encodeURIComponent(reqId)}`);
+    }
+
+    this.closeNotifications();
+    this.refreshNotifications();
+  }
+
+  private parseRequestIdFromMessage(message: string | undefined): string | undefined {
+    if (!message) {
+      return undefined;
+    }
+    const explicit = message.match(/\(Request #([^)]+)\)/);
+    if (explicit) {
+      return explicit[1].trim();
+    }
+    const hashForm = message.match(/request \(#([^)]+)\)/i);
+    if (hashForm) {
+      return hashForm[1].trim();
+    }
+    return undefined;
+  }
+
   markAllAsRead() {
-    this.notificationsService.markAllAsRead();
+    for (const n of this.notifications) {
+      if (!n.read) {
+        this.notificationsService.markAsRead(n.id);
+      }
+    }
+    this.refreshNotifications();
+  }
+
+  private refreshNotifications(): void {
+    this.ensureFirestoreBellSubscription();
+    const all = this.notificationsService.getNotificationsSnapshot();
+    const user = this.auth.currentUser;
+    const residentBarangayId = this.auth.getResidentBarangayIdForNotifications();
+    this.notifications = all.filter(n =>
+      this.notificationsService.isVisibleToUser(
+        n,
+        user?.id ?? null,
+        user?.role ?? null,
+        residentBarangayId,
+      ),
+    );
+    this.unreadCount = this.notifications.filter(n => !n.read).length;
+  }
+
+  /** Cross-device bell documents in Firestore (`portalNotifications`). */
+  private ensureFirestoreBellSubscription(): void {
+    const user = this.auth.currentUser;
+    const role = (user?.role ?? '').toLowerCase();
+    const barangay =
+      role === 'resident'
+        ? this.auth.getResidentBarangayIdForNotifications() ?? ''
+        : '';
+    const key = user ? `${role}:${barangay}` : '';
+    if (key === this.firestoreBellBindKey && this.firestorePortalSub && !this.firestorePortalSub.closed) {
+      return;
+    }
+    this.firestoreBellBindKey = key;
+    this.firestorePortalSub?.unsubscribe();
+    if (!user) {
+      this.notificationsService.applyFirestorePortalRows([]);
+      return;
+    }
+    if (role === 'resident') {
+      if (!barangay) {
+        this.notificationsService.applyFirestorePortalRows([]);
+        return;
+      }
+      this.firestorePortalSub = this.firestorePortal.observeResident(barangay).subscribe((rows: PortalNotificationRow[]) => {
+        this.notificationsService.applyFirestorePortalRows(rows);
+      });
+      return;
+    }
+    if (role === 'admin' || role === 'staff') {
+      this.firestorePortalSub = this.firestorePortal.observeStaff().subscribe((rows: PortalNotificationRow[]) => {
+        this.notificationsService.applyFirestorePortalRows(rows);
+      });
+      return;
+    }
+    this.notificationsService.applyFirestorePortalRows([]);
   }
 
   private isNotFoundRouteSnapshot(route: ActivatedRouteSnapshot | null): boolean {

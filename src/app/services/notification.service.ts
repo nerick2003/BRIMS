@@ -200,8 +200,63 @@ export class NotificationService {
     const merged = [...remote, ...local]
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, this.MAX_STORED);
+    if (this.sameList(this._notifications.value, merged)) {
+      return;
+    }
     this._notifications.next(merged);
     this.persist();
+  }
+
+  /**
+   * Prevent re-emitting an equivalent list, which can otherwise create
+   * notification refresh loops in subscribers.
+   */
+  private sameList(a: AppNotification[], b: AppNotification[]): boolean {
+    if (a === b) {
+      return true;
+    }
+    if (a.length !== b.length) {
+      return false;
+    }
+    for (let i = 0; i < a.length; i++) {
+      const x = a[i];
+      const y = b[i];
+      if (
+        x.id !== y.id ||
+        x.firestoreDocId !== y.firestoreDocId ||
+        x.read !== y.read ||
+        x.type !== y.type ||
+        x.title !== y.title ||
+        x.message !== y.message ||
+        x.linkRequestId !== y.linkRequestId ||
+        x.residentScopeBarangayId !== y.residentScopeBarangayId ||
+        x.createdAt.getTime() !== y.createdAt.getTime() ||
+        !this.sameStringArray(x.actionRoute, y.actionRoute) ||
+        !this.sameStringArray(x.visibleToRoles, y.visibleToRoles) ||
+        !this.sameStringArray(x.recipientUserIds, y.recipientUserIds)
+      ) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private sameStringArray(
+    a: readonly string[] | undefined,
+    b: readonly string[] | undefined,
+  ): boolean {
+    if (!a?.length && !b?.length) {
+      return true;
+    }
+    if (!a || !b || a.length !== b.length) {
+      return false;
+    }
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private mapPortalRow(r: PortalNotificationRow): AppNotification {

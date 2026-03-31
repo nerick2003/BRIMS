@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { ThemeService } from './theme.service';
 import { DataService } from './data.service';
 import { AuditLogService } from './audit-log.service';
 
@@ -23,7 +22,6 @@ export class AuthService {
   private readonly currentProfilePicture$ = new BehaviorSubject<string | null>(null);
 
   constructor(
-    private theme: ThemeService,
     private data: DataService,
     private audit: AuditLogService,
   ) {
@@ -272,7 +270,6 @@ export class AuthService {
       // ignore
     }
     this.currentProfilePicture$.next(null);
-    this.theme.setTheme('light');
   }
 
   get currentUser(): User | null {

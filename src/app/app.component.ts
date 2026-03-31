@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRouteSnapshot, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { DatePipe, NgClass } from '@angular/common';
 import { Subscription } from 'rxjs';
@@ -83,7 +83,18 @@ import {
               @if (!notifications.length) {
                 <p class="global-notifications__empty">No notifications yet.</p>
               } @else {
-                <ul class="global-notifications__list">
+                @if (showLatestButton) {
+                  <div class="global-notifications__topAction">
+                    <button
+                      class="global-notifications__showLatest"
+                      type="button"
+                      (click)="showLatestNotifications()"
+                    >
+                      Show latest notification
+                    </button>
+                  </div>
+                }
+                <ul class="global-notifications__list" #notificationsList (scroll)="onNotificationsScroll()">
                   @for (n of notifications; track n.id) {
                     <li
                       class="global-notifications__item"
@@ -238,7 +249,7 @@ import {
         border-radius: var(--radius-lg);
         box-shadow: var(--shadow-lg);
         overflow: hidden;
-        max-height: calc(100vh - 80px);
+        max-height: calc(100vh - 32px);
         z-index: 2;
         animation: globalNotificationsPanelIn 0.18s ease-out;
         display: flex;
@@ -253,7 +264,7 @@ import {
           right: 12px;
           width: auto;
           max-width: none;
-          max-height: calc(100vh - 88px);
+          max-height: calc(100vh - 64px);
         }
       }
 
@@ -349,15 +360,43 @@ import {
         text-align: center;
       }
 
+      .global-notifications__topAction {
+        display: flex;
+        justify-content: center;
+        margin: 0 0 8px;
+      }
+
+      .global-notifications__showLatest {
+        border: 1px solid color-mix(in srgb, var(--color-primary, #2563eb) 30%, transparent);
+        background: color-mix(in srgb, var(--color-primary, #2563eb) 8%, transparent);
+        color: var(--color-primary, #2563eb);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 6px 12px;
+        border-radius: 9999px;
+      }
+
+      .global-notifications__showLatest:hover {
+        background: color-mix(in srgb, var(--color-primary, #2563eb) 14%, transparent);
+      }
+
       .global-notifications__list {
         list-style: none;
         margin: 0;
         padding: 4px 0;
-        max-height: none;
+        max-height: 520px;
         overflow-y: auto;
         flex: 1;
         min-height: 0;
-        scrollbar-width: thin;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE and legacy Edge */
+      }
+
+      .global-notifications__list::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        display: none; /* Chrome, Safari, Opera */
       }
 
       .global-notifications__item {
@@ -470,10 +509,12 @@ import {
   ],
 })
 export class AppComponent implements OnInit, OnDestroy {
+  @ViewChild('notificationsList') notificationsListRef?: ElementRef<HTMLUListElement>;
   unreadCount = 0;
   showNotifications = false;
   showGlobalUi = false;
   notifications: AppNotification[] = [];
+  showLatestButton = false;
 
   private notificationsSub?: Subscription;
   private residentsDataSub?: Subscription;
@@ -513,10 +554,24 @@ export class AppComponent implements OnInit, OnDestroy {
 
   toggleNotifications() {
     this.showNotifications = !this.showNotifications;
+    if (!this.showNotifications) {
+      this.showLatestButton = false;
+    }
   }
 
   closeNotifications() {
     this.showNotifications = false;
+    this.showLatestButton = false;
+  }
+
+  showLatestNotifications(): void {
+    this.notificationsListRef?.nativeElement.scrollTo({ top: 0, behavior: 'smooth' });
+    this.showLatestButton = false;
+  }
+
+  onNotificationsScroll(): void {
+    const scrollTop = this.notificationsListRef?.nativeElement.scrollTop ?? 0;
+    this.showLatestButton = scrollTop > 80;
   }
 
   markAsRead(id: string) {

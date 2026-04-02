@@ -17,7 +17,10 @@
   
   <aside class="sidebar" [class.sidebar--open]="isMobileMenuOpen">
     <div class="sidebar-header">
-      <img class="logo" src="/assets/images/FOR-DASHBOARD.png" alt="Logo" loading="eager" decoding="async" />
+      <div class="logo-tilt" appLogoTilt>
+        <img class="logo" src="/assets/images/FOR-DASHBOARD.png" alt="Logo" loading="eager" decoding="async" />
+        <span class="logo-shine" aria-hidden="true"></span>
+      </div>
       <button 
         class="sidebar-close" 
         (click)="closeMobileMenu()"

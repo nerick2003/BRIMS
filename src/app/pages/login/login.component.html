@@ -1,7 +1,10 @@
 <div class="login-page">
   <div class="login-card card">
     <div class="login-logo assemble assemble--1">
-      <img class="logo" src="/assets/images/FOR-DASHBOARD.png" alt="Logo" loading="eager" decoding="async" />
+      <div #logo3dHost class="logo-3d" [class.is-ready]="threeReady" aria-hidden="true"></div>
+      @if (!threeReady) {
+        <img class="logo" src="/assets/images/FOR-DASHBOARD.png" alt="Logo" loading="eager" decoding="async" />
+      }
     </div>
     <h1 class="login-title assemble assemble--2">Barangay Resident Information Management System</h1>
 

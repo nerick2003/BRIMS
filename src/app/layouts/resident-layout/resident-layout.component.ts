@@ -6,11 +6,12 @@ import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
 import { AlertService } from '../../services/alert.service';
+import { LogoTiltDirective } from '../../shared/directives/logo-tilt.directive';
 
 @Component({
   selector: 'app-resident-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, DatePipe],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, DatePipe, LogoTiltDirective],
   templateUrl: './resident-layout.component.html',
   styleUrls: ['./resident-layout.component.scss'],
 })

@@ -97,11 +97,27 @@
   position: relative;
   flex-shrink: 0;
 
+  .logo-tilt {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    overflow: hidden;
+    transform-style: preserve-3d;
+    will-change: transform;
+    cursor: pointer;
+  }
+
   .logo {
     width: clamp(80px, 18vh, 200px);
     height: clamp(80px, 18vh, 200px);
     object-fit: contain;
     flex-shrink: 0;
+    display: block;
+    backface-visibility: hidden;
+    position: relative;
+    z-index: 1;
 
     @media (max-width: 1439px) {
       width: clamp(90px, 16vh, 150px);
@@ -112,6 +128,25 @@
       width: clamp(90px, 15vh, 140px);
       height: clamp(90px, 15vh, 140px);
     }
+  }
+
+  .logo-shine {
+    position: absolute;
+    inset: -20% auto -20% -45%;
+    width: 40%;
+    transform: skewX(-20deg) translateX(-180%);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 2;
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.42) 42%,
+      rgba(255, 255, 255, 0.95) 50%,
+      rgba(255, 255, 255, 0.42) 58%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    filter: blur(0.6px);
   }
 
   .sidebar-close {

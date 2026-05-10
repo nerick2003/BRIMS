@@ -71,6 +71,11 @@ export class AddResidentComponent {
       .filter(Boolean)
       .join(' ');
 
+    if (this.data.isDuplicateResident({ name: fullName, birthdate: this.resident.birthdate || undefined })) {
+      this.error = 'A resident with the same name and birthdate already exists.';
+      return;
+    }
+
     // Create new resident
     const newResident: Resident = {
       id: nextId,

@@ -132,6 +132,17 @@ export class AddHouseholdComponent implements AfterViewInit, OnDestroy {
       }
     }
 
+    const duplicateReason = this.data.getHouseholdDuplicateReason({
+      headId: this.selectedHeadResidentId,
+      members,
+      address: this.household.address!,
+      purok: this.household.purok!,
+    });
+    if (duplicateReason) {
+      this.error = duplicateReason;
+      return;
+    }
+
     // Create new household
     const newHousehold: Household = {
       id: nextId,

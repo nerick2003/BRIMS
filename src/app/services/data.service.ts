@@ -219,6 +219,30 @@ export class DataService {
     return this.residents.find((r) => r.residentId === rid);
   }
 
+  private normalizeText(value: string | undefined): string {
+    return (value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  /** Checks whether a resident already exists using full name + birthdate (or full-name fallback). */
+  isDuplicateResident(candidate: Pick<Resident, 'name' | 'birthdate'>): boolean {
+    const candidateName = this.normalizeText(candidate.name);
+    if (!candidateName) return false;
+    const candidateBirthdate = (candidate.birthdate ?? '').trim();
+
+    return this.residents.some((resident) => {
+      if (resident.archived) return false;
+      if (this.normalizeText(resident.name) !== candidateName) return false;
+
+      const existingBirthdate = (resident.birthdate ?? '').trim();
+      if (candidateBirthdate && existingBirthdate) {
+        return existingBirthdate === candidateBirthdate;
+      }
+
+      // If either record has no birthdate, use strict full-name fallback.
+      return true;
+    });
+  }
+
   /** Residents that are not archived (shown in regular lists and reports). */
   getActiveResidents(): Resident[] {
     return this.residents.filter(r => !r.archived);
@@ -230,6 +254,17 @@ export class DataService {
   }
 
   addResident(resident: Resident): void {
+    if (this.isDuplicateResident(resident)) {
+      this.errorHandler.handleErrorWithContext(
+        new Error(`Duplicate resident detected: ${resident.name}`),
+        {
+          component: 'DataService',
+          action: 'add resident',
+        }
+      );
+      return;
+    }
+
     // Update cache immediately for synchronous access
     this.residents.push(resident);
     this.audit.log({
@@ -541,6 +576,47 @@ export class DataService {
     return this.households.find((h) => h.id === id);
   }
 
+  /**
+   * Returns a conflict reason when attempting to add a duplicate household.
+   * Returns null when there is no conflict.
+   */
+  getHouseholdDuplicateReason(candidate: Pick<Household, 'headId' | 'members' | 'address' | 'purok'>): string | null {
+    const activeHouseholds = this.households.filter(h => !h.archived);
+
+    const duplicateHead = activeHouseholds.find(h => h.headId === candidate.headId);
+    if (duplicateHead) {
+      return `This head is already assigned to household ${duplicateHead.householdId}.`;
+    }
+
+    const candidateMemberIds = new Set(
+      (candidate.members ?? [])
+        .map(m => (m.residentId ?? '').trim())
+        .filter(Boolean)
+    );
+    if (candidateMemberIds.size > 0) {
+      const conflictingHousehold = activeHouseholds.find(h =>
+        h.members.some(m => candidateMemberIds.has((m.residentId ?? '').trim()))
+      );
+      if (conflictingHousehold) {
+        return `One or more residents are already in household ${conflictingHousehold.householdId}.`;
+      }
+    }
+
+    const candidateAddress = this.normalizeText(candidate.address);
+    const candidatePurok = this.normalizeText(candidate.purok);
+    if (candidateAddress && candidatePurok) {
+      const duplicateAddress = activeHouseholds.find(h =>
+        this.normalizeText(h.address) === candidateAddress &&
+        this.normalizeText(h.purok) === candidatePurok
+      );
+      if (duplicateAddress) {
+        return `A household already exists at this address in ${duplicateAddress.purok}.`;
+      }
+    }
+
+    return null;
+  }
+
   /** Households that are not archived (active). */
   getActiveHouseholds(): Household[] {
     return this.households.filter(h => !h.archived);
@@ -552,6 +628,18 @@ export class DataService {
   }
 
   addHousehold(household: Household): void {
+    const duplicateReason = this.getHouseholdDuplicateReason(household);
+    if (duplicateReason) {
+      this.errorHandler.handleErrorWithContext(
+        new Error(`Duplicate household detected: ${duplicateReason}`),
+        {
+          component: 'DataService',
+          action: 'add household',
+        }
+      );
+      return;
+    }
+
     this.households.push(household);
     this.audit.log({
       action: 'Add household',

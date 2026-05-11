@@ -14,10 +14,14 @@ import { AuthService } from '../../services/auth.service';
   styleUrls: ['./request-detail.component.scss'],
 })
 export class RequestDetailComponent implements OnInit {
+  readonly rejectReasonMaxLength = 300;
   request: CertificateRequest | undefined;
   requester: Resident | undefined;
   qrCodeDataUrl: string | null = null;
   showQRCode = false;
+  showRejectModal = false;
+  rejectReasonInput = '';
+  rejectReasonError = '';
   isUpdating = false;
   backRoute: string[] = ['..'];
   backText = 'Back to Requests';
@@ -132,14 +136,34 @@ export class RequestDetailComponent implements OnInit {
       rejectedById: null,
       rejectedByName: null,
       rejectedAt: null,
+      rejectedReason: null,
     };
     this.data.updateRequest(id, updates);
     this.request = { ...this.request, ...updates };
     this.isUpdating = false;
   }
 
-  rejectRequest(): void {
+  openRejectModal(): void {
     if (!this.request || this.isUpdating) return;
+    this.showRejectModal = true;
+    this.rejectReasonInput = '';
+    this.rejectReasonError = '';
+  }
+
+  closeRejectModal(): void {
+    if (this.isUpdating) return;
+    this.showRejectModal = false;
+    this.rejectReasonInput = '';
+    this.rejectReasonError = '';
+  }
+
+  submitRejectRequest(): void {
+    if (!this.request || this.isUpdating) return;
+    const reason = this.rejectReasonInput.trim();
+    if (!reason) {
+      this.rejectReasonError = 'Please provide a rejection reason.';
+      return;
+    }
     this.isUpdating = true;
     const id = this.request.id;
     const user = this.auth.currentUser;
@@ -149,6 +173,7 @@ export class RequestDetailComponent implements OnInit {
       rejectedById: user?.id ?? null,
       rejectedByName: user?.name ?? null,
       rejectedAt: now,
+      rejectedReason: reason,
       approvedById: null,
       approvedByName: null,
       approvedAt: null,
@@ -156,6 +181,14 @@ export class RequestDetailComponent implements OnInit {
     this.data.updateRequest(id, updates);
     this.request = { ...this.request, ...updates };
     this.isUpdating = false;
+    this.closeRejectModal();
+  }
+
+  onRejectReasonChange(value: string): void {
+    this.rejectReasonInput = value;
+    if (this.rejectReasonError && value.trim()) {
+      this.rejectReasonError = '';
+    }
   }
 
   canDownload(): boolean {

@@ -68,6 +68,12 @@
                 </span>
               </div>
             }
+            @if (request.status === 'Rejected' && request.rejectedReason) {
+              <div class="info-item">
+                <span class="info-label">Rejection Reason</span>
+                <span class="info-value">{{ request.rejectedReason }}</span>
+              </div>
+            }
           </div>
         </div>
 
@@ -98,6 +104,21 @@
             <div class="status-message__content">
               <h3>Request approved!</h3>
               <p>Your request has been approved. You can now download your certificate or visit the barangay office to claim it.</p>
+            </div>
+          </div>
+        }
+
+        @if (request.status === 'Rejected') {
+          <div class="status-message status-message--warning">
+            <div class="status-message__icon">✗</div>
+            <div class="status-message__content">
+              <h3>Request rejected</h3>
+              <p>
+                Your request was rejected by barangay staff.
+                @if (request.rejectedReason) {
+                  Reason: {{ request.rejectedReason }}
+                }
+              </p>
             </div>
           </div>
         }

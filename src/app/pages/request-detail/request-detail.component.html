@@ -95,6 +95,12 @@
                 </span>
               </div>
             }
+            @if (request.status === 'Rejected' && request.rejectedReason) {
+              <div class="info-item">
+                <span class="info-label">Rejection Reason:</span>
+                <span class="info-value">{{ request.rejectedReason }}</span>
+              </div>
+            }
             <div class="info-item">
               <span class="info-label">Date:</span>
               <span class="info-value">{{ request.date }}</span>
@@ -107,7 +113,7 @@
             <h2>Actions</h2>
             <div class="action-buttons">
               <button class="btn btn--success" type="button" (click)="approveRequest()">Approve</button>
-              <button class="btn btn--danger" type="button" (click)="rejectRequest()">Reject</button>
+              <button class="btn btn--danger" type="button" (click)="openRejectModal()">Reject</button>
             </div>
           </div>
         }
@@ -198,3 +204,35 @@
     </div>
   }
 </div>
+
+@if (showRejectModal) {
+  <div class="reject-modal-backdrop" (click)="closeRejectModal()">
+    <div class="reject-modal card" role="dialog" aria-modal="true" aria-labelledby="reject-title" (click)="$event.stopPropagation()">
+      <h2 id="reject-title" class="reject-modal__title">Reject Request</h2>
+      <p class="reject-modal__subtitle">
+        Add a clear reason so the resident understands why this request was rejected.
+      </p>
+
+      <label class="reject-modal__label" for="reject-reason">Rejection reason</label>
+      <textarea
+        id="reject-reason"
+        class="reject-modal__textarea"
+        [value]="rejectReasonInput"
+        [attr.maxlength]="rejectReasonMaxLength"
+        (input)="onRejectReasonChange($any($event.target).value)"
+        placeholder="Example: Please upload a valid government-issued ID for verification."
+      ></textarea>
+      <div class="reject-modal__meta">
+        <span class="reject-modal__error">{{ rejectReasonError }}</span>
+        <span class="reject-modal__counter">{{ rejectReasonInput.length }}/{{ rejectReasonMaxLength }}</span>
+      </div>
+
+      <div class="reject-modal__actions">
+        <button class="btn btn--outline" type="button" (click)="closeRejectModal()" [disabled]="isUpdating">Cancel</button>
+        <button class="btn btn--danger" type="button" (click)="submitRejectRequest()" [disabled]="isUpdating">
+          Confirm Rejection
+        </button>
+      </div>
+    </div>
+  </div>
+}

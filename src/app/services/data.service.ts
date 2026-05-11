@@ -52,6 +52,8 @@ export interface CertificateRequest {
   rejectedByName?: string | null;
   /** When the request was rejected (ISO string). */
   rejectedAt?: string | null;
+  /** Optional explanation for why a request was rejected. */
+  rejectedReason?: string | null;
   /** Soft-archive flag for old/completed requests. */
   archived?: boolean;
   /** When this request was archived (ISO string). */
@@ -198,7 +200,7 @@ export class DataService {
         this.roles$.next(roles);
       });
 
-      // Apply auto-archive rules for old/inactive records (runs once on startup).
+      // Month-end certificate archival + inactive-user rules (runs once after initial load).
       this.applyAutoArchiveRules();
     } catch (error) {
       this.errorHandler.handleErrorWithContext(error, {
@@ -223,8 +225,25 @@ export class DataService {
     return (value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
   }
 
-  /** Checks whether a resident already exists using full name + birthdate (or full-name fallback). */
-  isDuplicateResident(candidate: Pick<Resident, 'name' | 'birthdate'>): boolean {
+  private normalizeBirthCertificateNumber(value: string | undefined): string {
+    return (value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  /**
+   * Checks whether a resident already exists using:
+   * - birth certificate number (when provided on the candidate), or
+   * - full name + birthdate (or full-name-only fallback when birthdate is missing on either side).
+   */
+  isDuplicateResident(candidate: Pick<Resident, 'name' | 'birthdate' | 'birthCertificateNumber'>): boolean {
+    const candidateBc = this.normalizeBirthCertificateNumber(candidate.birthCertificateNumber);
+    if (candidateBc) {
+      const bcDuplicate = this.residents.some((resident) => {
+        if (resident.archived) return false;
+        return this.normalizeBirthCertificateNumber(resident.birthCertificateNumber) === candidateBc;
+      });
+      if (bcDuplicate) return true;
+    }
+
     const candidateName = this.normalizeText(candidate.name);
     if (!candidateName) return false;
     const candidateBirthdate = (candidate.birthdate ?? '').trim();
@@ -507,7 +526,7 @@ export class DataService {
           title: isApproved ? 'Request approved' : 'Request declined',
           message: isApproved
             ? `Your ${request.type} request (#${id}) was approved.`
-            : `Your ${request.type} request (#${id}) was declined.`,
+            : `Your ${request.type} request (#${id}) was declined.${request.rejectedReason ? ` Reason: ${request.rejectedReason}` : ''}`,
           linkRequestId: id,
         })
         .subscribe({
@@ -962,6 +981,8 @@ export class DataService {
 
   // Internal helpers for archives / auto-archive
 
+  private static readonly MONTHLY_CERT_ARCHIVE_STORAGE_KEY = 'brims.monthlyCertificateArchive.lastClosedYearMonth';
+
   /** Best-effort date parser that tolerates the formatted date strings used in demo data. */
   private parseDate(value: string | undefined): Date | null {
     if (!value) return null;
@@ -969,23 +990,90 @@ export class DataService {
     return isNaN(d.getTime()) ? null : d;
   }
 
-  /** Automatically archive very old requests and long-inactive users based on simple time rules. */
-  private applyAutoArchiveRules(): void {
-    const now = Date.now();
-    const monthMs = 30 * 24 * 60 * 60 * 1000;
+  /** Local calendar: first instant of the month after `d` (exclusive cutoff for prior-month archive pass). */
+  private startOfNextCalendarMonth(d: Date): Date {
+    return new Date(d.getFullYear(), d.getMonth() + 1, 1);
+  }
 
-    // Requests: auto-archive approved/rejected requests older than 12 months.
-    const requestsThreshold = now - 12 * monthMs;
+  /** Whether `d` is the last calendar day of its month (local timezone). */
+  private isLastDayOfCalendarMonth(d: Date): boolean {
+    const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    return d.getDate() === last.getDate();
+  }
+
+  private formatYearMonth(d: Date): string {
+    const y = d.getFullYear();
+    const m = d.getMonth() + 1;
+    return `${y}-${m < 10 ? `0${m}` : m}`;
+  }
+
+  private getLastClosedCertificateArchiveYm(): string | null {
+    try {
+      if (typeof localStorage === 'undefined') return null;
+      return localStorage.getItem(DataService.MONTHLY_CERT_ARCHIVE_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  private setLastClosedCertificateArchiveYm(ym: string): void {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      localStorage.setItem(DataService.MONTHLY_CERT_ARCHIVE_STORAGE_KEY, ym);
+    } catch {
+      /* ignore quota / privacy mode */
+    }
+  }
+
+  /** Archive Approved/Rejected requests whose `date` is strictly before `cutoffExclusive` (local-month boundaries). */
+  private archiveApprovedRejectedRequestsBefore(cutoffExclusive: Date): void {
+    const cutoffMs = cutoffExclusive.getTime();
     this.requests.forEach(req => {
       if (req.archived) return;
+      if (req.status !== 'Approved' && req.status !== 'Rejected') return;
       const requestDate = this.parseDate(req.date);
-      if (!requestDate) return;
-      const isOld = requestDate.getTime() < requestsThreshold;
-      const isFinalStatus = req.status === 'Approved' || req.status === 'Rejected';
-      if (isOld && isFinalStatus) {
-        this.archiveRequest(req.id);
-      }
+      if (!requestDate || requestDate.getTime() >= cutoffMs) return;
+      this.archiveRequest(req.id);
     });
+  }
+
+  /**
+   * Archives finalized certificate requests at each calendar month-end (local device date).
+   *
+   * On the **last day** of month M, Approved/Rejected requests with `date` before month M+1 are archived
+   * (including requests dated in month M). If the app is not opened that day, a **catch-up** run applies
+   * the same cutoff the next time the app loads in a later month.
+   */
+  private applyMonthlyCertificateArchive(): void {
+    const now = new Date();
+
+    if (this.isLastDayOfCalendarMonth(now)) {
+      const passYm = this.formatYearMonth(now);
+      const lastClosed = this.getLastClosedCertificateArchiveYm();
+      if (lastClosed === passYm) return;
+
+      const cutoff = this.startOfNextCalendarMonth(now);
+      this.archiveApprovedRejectedRequestsBefore(cutoff);
+      this.setLastClosedCertificateArchiveYm(passYm);
+      return;
+    }
+
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevYm = this.formatYearMonth(prevMonth);
+    const lastClosed = this.getLastClosedCertificateArchiveYm();
+    if (lastClosed === prevYm) return;
+
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    this.archiveApprovedRejectedRequestsBefore(startOfThisMonth);
+    this.setLastClosedCertificateArchiveYm(prevYm);
+  }
+
+  /** Automatically archive finalized certificate requests by month-end rules and long-inactive users by age. */
+  private applyAutoArchiveRules(): void {
+    this.applyMonthlyCertificateArchive();
+
+    const now = Date.now();
+    const monthMs = 30 * 24 * 60 * 60 * 1000;
 
     // Users: auto-archive Inactive users whose last login (or createdAt) is older than 24 months.
     const usersThreshold = now - 24 * monthMs;

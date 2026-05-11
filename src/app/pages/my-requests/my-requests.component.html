@@ -106,6 +106,9 @@
               </span>
             </div>
             <p class="request-card__purpose">{{ r.purpose }}</p>
+            @if (r.status === 'Rejected' && r.rejectedReason) {
+              <p class="request-card__purpose">Rejection reason: {{ r.rejectedReason }}</p>
+            }
             <div class="request-card__meta">
               <span class="request-card__id">ID: {{ r.id }}</span>
               <span class="request-card__date">📅 {{ r.date }}</span>

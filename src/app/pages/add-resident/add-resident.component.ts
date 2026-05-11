@@ -71,8 +71,15 @@ export class AddResidentComponent {
       .filter(Boolean)
       .join(' ');
 
-    if (this.data.isDuplicateResident({ name: fullName, birthdate: this.resident.birthdate || undefined })) {
-      this.error = 'A resident with the same name and birthdate already exists.';
+    if (
+      this.data.isDuplicateResident({
+        name: fullName,
+        birthdate: this.resident.birthdate || undefined,
+        birthCertificateNumber: this.resident.birthCertificateNumber || undefined,
+      })
+    ) {
+      this.error =
+        'A resident with the same name and birthdate, or the same birth certificate (BC) number, already exists.';
       return;
     }
 

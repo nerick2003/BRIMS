@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { catchError, retry, throwError, timer } from 'rxjs';
 import { NotificationService } from '../services/notification.service';
 import { ApiConfigService } from '../services/api-config.service';
+import { AuthService } from '../services/auth.service';
 
 /**
  * HTTP Error Interceptor
@@ -16,6 +17,7 @@ import { ApiConfigService } from '../services/api-config.service';
 export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const notificationService = inject(NotificationService);
   const apiConfig = inject(ApiConfigService);
+  const auth = inject(AuthService);
 
   // Determine retry configuration based on request
   const isNotificationApi = req.url.includes('/api/notifications/');
@@ -92,8 +94,16 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
         errorTitle = 'Request Too Large';
       }
 
-      // Show user-facing notification
-      notificationService.error(errorMessage, errorTitle);
+      const userId = auth.currentUser?.id;
+      if (userId) {
+        notificationService.notifyUsers([userId], {
+          type: 'error',
+          message: errorMessage,
+          title: errorTitle,
+        });
+      } else {
+        notificationService.error(errorMessage, errorTitle);
+      }
 
       // Log error for debugging
       console.error('HTTP Error:', {

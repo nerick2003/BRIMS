@@ -110,7 +110,8 @@ export class NotificationService {
     const hasTargeting =
       (roles?.length ?? 0) > 0 || (ids?.length ?? 0) > 0;
     if (!hasTargeting) {
-      return true;
+      const role = String(userRole ?? '').toLowerCase();
+      return role === 'admin' || role === 'staff';
     }
 
     const roleMatch =

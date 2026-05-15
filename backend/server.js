@@ -1,30 +1,19 @@
-// Simple Express backend for BRIMMS SMS & notifications
-// SMS provider: Twilio
-// Email provider: Resend (preferred) or SMTP via Nodemailer
-//
-// Environment variables (see .env.example):
-// - TWILIO_ACCOUNT_SID
-// - TWILIO_AUTH_TOKEN
-// - TWILIO_FROM_NUMBER
-// - RESEND_API_KEY (preferred for email - works on Railway; no SMTP blocking)
-// - EMAIL_FROM or RESEND_FROM (required when using Resend; verify domain at resend.com)
-// - SMTP_* (fallback when RESEND_API_KEY not set)
-// - PORT (optional, default 4000)
-// - CORS_ORIGIN (optional, default http://localhost:4200)
-// - API_AUTH_TOKEN (optional, but strongly recommended in non-demo deployments)
+// BRIMMS notification backend (SMS + email)
+// Provider selection is env-only — see backend/.env.example and backend/MIGRATION.md
 
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const multer = require('multer');
-const nodemailer = require('nodemailer');
+const { getProviderConfig, logProviderSummary } = require('./config/providers');
+const { createSmsProvider, createEmailProvider } = require('./providers');
 
 dotenv.config();
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB per file
+  limits: { fileSize: 50 * 1024 * 1024 },
 });
 
 const app = express();
@@ -33,24 +22,26 @@ const PORT = process.env.PORT || 4000;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:4200';
 const API_AUTH_TOKEN = process.env.API_AUTH_TOKEN || null;
 
-// Body size limit for JSON/urlencoded (email attachments as base64). Default 200MB.
-// In production, set BODY_LIMIT_MB in .env if your host has a lower default.
 const BODY_LIMIT_MB = Number(process.env.BODY_LIMIT_MB) || 200;
 const BODY_LIMIT_BYTES = BODY_LIMIT_MB * 1024 * 1024;
 
+let providerConfig;
+let smsProvider;
+let emailProvider;
+
+try {
+  providerConfig = getProviderConfig();
+  smsProvider = createSmsProvider();
+  emailProvider = createEmailProvider();
+} catch (err) {
+  console.error('Provider configuration error:', err.message);
+  process.exit(1);
+}
+
 app.use(bodyParser.json({ limit: BODY_LIMIT_BYTES }));
 app.use(bodyParser.urlencoded({ limit: BODY_LIMIT_BYTES, extended: true }));
+app.use(cors({ origin: CORS_ORIGIN }));
 
-app.use(
-  cors({
-    origin: CORS_ORIGIN,
-  })
-);
-
-// Simple token-based auth middleware for notification APIs.
-// In production, set API_AUTH_TOKEN in .env and require callers to send:
-//   Authorization: Bearer <API_AUTH_TOKEN>
-// If API_AUTH_TOKEN is not set, auth is effectively disabled (demo mode).
 function requireApiAuth(req, res, next) {
   if (!API_AUTH_TOKEN) {
     return next();
@@ -63,119 +54,8 @@ function requireApiAuth(req, res, next) {
   return res.status(401).json({ success: false, error: 'Unauthorized' });
 }
 
-// In-memory store for demo notifications
 const notifications = [];
 
-// Initialize Twilio client (lazy)
-function getTwilioClient() {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
-  const fromNumber = process.env.TWILIO_FROM_NUMBER;
-
-  if (!accountSid || !authToken || !fromNumber) {
-    throw new Error(
-      'Missing Twilio configuration. Please set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM_NUMBER.'
-    );
-  }
-
-  const client = require('twilio')(accountSid, authToken);
-  return { client, fromNumber };
-}
-
-// Resend API (preferred - works on Railway, no SMTP port blocking)
-async function sendEmailViaResend({ from, to, subject, text, attachmentName, attachmentContent, attachmentMimeType }) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return null;
-
-  const fromAddr = from || process.env.RESEND_FROM || process.env.EMAIL_FROM || 'BRIMMS <onboarding@resend.dev>';
-  const payload = {
-    from: fromAddr,
-    to: Array.isArray(to) ? to : [to],
-    subject,
-    text,
-  };
-
-  if (attachmentName && attachmentContent) {
-    const content = Buffer.isBuffer(attachmentContent)
-      ? attachmentContent.toString('base64')
-      : attachmentContent;
-    payload.attachments = [{ filename: attachmentName, content }];
-  }
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-    signal: controller.signal,
-  }).finally(() => clearTimeout(timeoutId));
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || data.error || `Resend API error: ${res.status}`);
-  }
-  return { messageId: data.id };
-}
-
-// Initialize Nodemailer transporter (lazy) - fallback when Resend not used
-let emailTransporter = null;
-
-function getEmailTransporter() {
-  if (emailTransporter) return emailTransporter;
-
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT || 587);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-
-  if (!host || !user || !pass) {
-    throw new Error(
-      'Missing SMTP configuration. Please set SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS.'
-    );
-  }
-
-  emailTransporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
-  });
-
-  return emailTransporter;
-}
-
-// Send email: use Resend if API key set, else SMTP
-async function sendEmail({ from, to, subject, message, attachmentName, attachmentContent, attachmentMimeType }) {
-  const fromAddr = from || process.env.EMAIL_FROM || process.env.SMTP_USER;
-  const opts = { from: fromAddr, to, subject, text: message, attachmentName, attachmentContent, attachmentMimeType };
-
-  const resendResult = await sendEmailViaResend(opts);
-  if (resendResult) return resendResult;
-
-  const transporter = getEmailTransporter();
-  const mailOptions = {
-    from: fromAddr,
-    to,
-    subject,
-    text: message,
-  };
-  if (attachmentName && attachmentContent) {
-    mailOptions.attachments = [{
-      filename: attachmentName,
-      content: Buffer.isBuffer(attachmentContent) ? attachmentContent : Buffer.from(attachmentContent, 'base64'),
-      contentType: attachmentMimeType || undefined,
-    }];
-  }
-  const info = await transporter.sendMail(mailOptions);
-  return { messageId: info.messageId };
-}
-
-// Utility to push notification record
 function recordNotification({ type, recipient, message, status, error }) {
   const entry = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -187,47 +67,55 @@ function recordNotification({ type, recipient, message, status, error }) {
     createdAt: new Date().toISOString(),
   };
   notifications.unshift(entry);
-  // Keep list reasonably small
   if (notifications.length > 200) {
     notifications.pop();
   }
   return entry;
 }
 
-// Health check
+function emailNotConfiguredResponse(res) {
+  return res.status(503).json({
+    success: false,
+    error:
+      'Email not configured. Set EMAIL_PROVIDER=demo (local), resend + RESEND_API_KEY, or smtp + SMTP_*.',
+  });
+}
+
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, service: 'brimms-backend', time: new Date().toISOString() });
+  res.json({
+    ok: true,
+    service: 'brimms-backend',
+    time: new Date().toISOString(),
+    providers: {
+      sms: {
+        provider: providerConfig.sms.provider,
+        demo: providerConfig.sms.demo,
+        configured: providerConfig.sms.configured,
+      },
+      email: {
+        provider: providerConfig.email.provider,
+        demo: providerConfig.email.demo,
+        configured: providerConfig.email.configured,
+      },
+    },
+  });
 });
 
-// POST /api/notifications/sms - send one-off SMS
 app.post('/api/notifications/sms', requireApiAuth, async (req, res) => {
   const { to, message } = req.body || {};
-
   if (!to || !message) {
     return res.status(400).json({ error: 'Missing required fields: to, message' });
   }
 
   try {
-    const { client, fromNumber } = getTwilioClient();
-
-    const twilioMessage = await client.messages.create({
-      body: message,
-      to,
-      from: fromNumber,
-    });
-
+    const { providerId } = await smsProvider.send({ to, message });
     const record = recordNotification({
       type: 'sms',
       recipient: to,
       message,
       status: 'sent',
     });
-
-    res.status(201).json({
-      success: true,
-      notification: record,
-      providerId: twilioMessage.sid,
-    });
+    res.status(201).json({ success: true, notification: record, providerId });
   } catch (err) {
     console.error('Error sending SMS:', err);
     const record = recordNotification({
@@ -241,23 +129,19 @@ app.post('/api/notifications/sms', requireApiAuth, async (req, res) => {
   }
 });
 
-// POST /api/notifications/email - send one-off email
 app.post('/api/notifications/email', requireApiAuth, async (req, res) => {
-  const { to, subject, message, attachmentName, attachmentContent, attachmentMimeType } = req.body || {};
+  const { to, subject, message, attachmentName, attachmentContent, attachmentMimeType } =
+    req.body || {};
 
   if (!to || !subject || !message) {
     return res.status(400).json({ error: 'Missing required fields: to, subject, message' });
   }
-
-  if (!process.env.RESEND_API_KEY && !process.env.SMTP_HOST) {
-    return res.status(503).json({
-      success: false,
-      error: 'Email not configured. Set RESEND_API_KEY (recommended) or SMTP_* variables.',
-    });
+  if (!emailProvider) {
+    return emailNotConfiguredResponse(res);
   }
 
   try {
-    const info = await sendEmail({
+    const info = await emailProvider.send({
       to,
       subject,
       message,
@@ -265,14 +149,12 @@ app.post('/api/notifications/email', requireApiAuth, async (req, res) => {
       attachmentContent,
       attachmentMimeType,
     });
-
     const record = recordNotification({
       type: 'email',
       recipient: to,
       message: `${subject}: ${message.slice(0, 120)}${message.length > 120 ? '…' : ''}`,
       status: 'sent',
     });
-
     res.status(201).json({
       success: true,
       notification: record,
@@ -291,8 +173,6 @@ app.post('/api/notifications/email', requireApiAuth, async (req, res) => {
   }
 });
 
-// POST /api/notifications/email/bulk - send email to multiple recipients
-// Accepts JSON (no attachment or small base64) OR multipart/form-data (file attachment – no size limit in JSON body)
 function maybeMulterBulk(req, res, next) {
   if (req.is('multipart/form-data')) {
     return upload.single('attachment')(req, res, next);
@@ -301,10 +181,16 @@ function maybeMulterBulk(req, res, next) {
 }
 
 app.post('/api/notifications/email/bulk', requireApiAuth, maybeMulterBulk, async (req, res) => {
-  let recipients, subject, message, attachmentName, attachmentContent, attachmentMimeType;
+  let recipients;
+  let subject;
+  let message;
+  let attachmentName;
+  let attachmentContent;
+  let attachmentMimeType;
 
   if (req.file) {
-    recipients = typeof req.body.recipients === 'string' ? JSON.parse(req.body.recipients) : req.body.recipients;
+    recipients =
+      typeof req.body.recipients === 'string' ? JSON.parse(req.body.recipients) : req.body.recipients;
     subject = req.body.subject;
     message = req.body.message;
     attachmentName = req.file.originalname || 'attachment';
@@ -325,12 +211,8 @@ app.post('/api/notifications/email/bulk', requireApiAuth, maybeMulterBulk, async
       .status(400)
       .json({ error: 'Missing required fields: recipients (array), subject, message' });
   }
-
-  if (!process.env.RESEND_API_KEY && !process.env.SMTP_HOST) {
-    return res.status(503).json({
-      success: false,
-      error: 'Email not configured. Set RESEND_API_KEY (recommended) or SMTP_* variables.',
-    });
+  if (!emailProvider) {
+    return emailNotConfiguredResponse(res);
   }
 
   try {
@@ -344,7 +226,7 @@ app.post('/api/notifications/email/bulk', requireApiAuth, maybeMulterBulk, async
 
     for (const to of recipients) {
       try {
-        const info = await sendEmail({
+        const info = await emailProvider.send({
           to,
           subject,
           message,
@@ -379,33 +261,24 @@ app.post('/api/notifications/email/bulk', requireApiAuth, maybeMulterBulk, async
   }
 });
 
-// POST /api/notifications/sms/bulk - send SMS to multiple recipients
 app.post('/api/notifications/sms/bulk', requireApiAuth, async (req, res) => {
   const { recipients, message } = req.body || {};
-
   if (!Array.isArray(recipients) || recipients.length === 0 || !message) {
     return res.status(400).json({ error: 'Missing required fields: recipients (array), message' });
   }
 
   try {
-    const { client, fromNumber } = getTwilioClient();
-
     const results = [];
-
     for (const to of recipients) {
       try {
-        const twilioMessage = await client.messages.create({
-          body: message,
-          to,
-          from: fromNumber,
-        });
+        const { providerId } = await smsProvider.send({ to, message });
         const record = recordNotification({
           type: 'sms',
           recipient: to,
           message,
           status: 'sent',
         });
-        results.push({ to, success: true, providerId: twilioMessage.sid, notificationId: record.id });
+        results.push({ to, success: true, providerId, notificationId: record.id });
       } catch (innerErr) {
         console.error('Error sending bulk SMS to', to, innerErr);
         const record = recordNotification({
@@ -418,7 +291,6 @@ app.post('/api/notifications/sms/bulk', requireApiAuth, async (req, res) => {
         results.push({ to, success: false, error: innerErr.message, notificationId: record.id });
       }
     }
-
     res.status(201).json({ success: true, results });
   } catch (err) {
     console.error('Bulk SMS general error:', err);
@@ -426,12 +298,10 @@ app.post('/api/notifications/sms/bulk', requireApiAuth, async (req, res) => {
   }
 });
 
-// GET /api/notifications - list recent notifications
 app.get('/api/notifications', requireApiAuth, (req, res) => {
   res.json({ success: true, notifications });
 });
 
-// Handle payload too large (body-parser)
 app.use((err, req, res, next) => {
   if (err.type === 'entity.too.large' || err.status === 413 || err.statusCode === 413) {
     return res.status(413).json({ success: false, error: 'Request entity too large' });
@@ -441,6 +311,6 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`BRIMMS backend listening on http://localhost:${PORT}`);
-  console.log(`Body limit: ${BODY_LIMIT_BYTES / 1024 / 1024}MB`);
+  console.log(`Body limit: ${BODY_LIMIT_MB}MB`);
+  logProviderSummary(providerConfig);
 });
-

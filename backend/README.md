@@ -4,13 +4,18 @@ This is a minimal **Node.js + Express** backend that exposes SMS and notificatio
 
 ## Providers
 
-- **SMS**: Twilio
-  - `TWILIO_ACCOUNT_SID`
-  - `TWILIO_AUTH_TOKEN`
-  - `TWILIO_FROM_NUMBER`
-- **Email**: Resend (recommended) or SMTP
-  - **Resend** (works on Railway, no port blocking): `RESEND_API_KEY`, optional `RESEND_FROM` or `EMAIL_FROM`
-  - **SMTP** (fallback): `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`
+Provider selection is **env-only** — no Angular changes. See **[MIGRATION.md](./MIGRATION.md)** for demo → production steps.
+
+| Channel | `*_PROVIDER` values | Credentials |
+|---------|---------------------|-------------|
+| SMS | `demo`, `twilio` | `TWILIO_*` when using `twilio` |
+| Email | `demo`, `resend`, `smtp`, `auto` | `RESEND_*` or `SMTP_*` |
+
+**Local demo:** `SMS_PROVIDER=demo` and `EMAIL_PROVIDER=demo` (logs to console).
+
+**Production:** `SMS_PROVIDER=twilio` + Twilio vars; `EMAIL_PROVIDER=resend` or `smtp` + provider vars.
+
+Legacy: `SMS_DEMO_MODE=true` / `EMAIL_DEMO_MODE=true` still work if `*_PROVIDER` is unset.
 
 ## API Endpoints
 

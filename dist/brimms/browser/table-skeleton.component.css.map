@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/shared/skeleton/table-skeleton.component.ts"],
+  "sourcesContent": ["\n      .table-skeleton tbody td {\n        padding-top: 0.85rem;\n        padding-bottom: 0.85rem;\n      }\n\n      .visually-hidden {\n        position: absolute;\n        width: 1px;\n        height: 1px;\n        padding: 0;\n        margin: -1px;\n        overflow: hidden;\n        clip: rect(0, 0, 0, 0);\n        white-space: nowrap;\n        border: 0;\n      }\n    "],
+  "mappings": ";AACM,CAAA,eAAA,MAAA;AACE,eAAA;AACA,kBAAA;;AAGF,CAAA;AACE,YAAA;AACA,SAAA;AACA,UAAA;AACA,WAAA;AACA,UAAA;AACA,YAAA;AACA,QAAA,KAAA,CAAA,EAAA,CAAA,EAAA,CAAA,EAAA;AACA,eAAA;AACA,UAAA;;",
+  "names": []
+}

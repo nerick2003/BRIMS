@@ -1,0 +1,53 @@
+flowchart TD
+  Start([Staff opens app]):::start --> Login["Login Page"]
+  Login -->|Forgot password| Forgot["Forgot Password"]
+  Forgot --> Reset["Reset Password"]
+  Reset --> Login
+  Login -->|Valid staff login| Dash["Staff Dashboard<br/>(summary cards + recent activity)"]:::page
+
+  Dash --> Profile["My Profile<br/>(staff account info)"]:::page
+  Dash --> QR["QR Scanner<br/>(scan resident / request QR)"]:::page
+  Dash --> ResidentsList["Residents List<br/>(search, filter by purok/gender/age)"]:::page
+  Dash --> HouseholdsList["Households List"]:::page
+  Dash --> ReportsView["Reports<br/>(population, demographics)"]:::page
+  Dash --> RequestsList["Requests List<br/>(active, non-archived)"]:::page
+  Dash --> Notif["Notifications Bell"]:::page
+  Dash --> Logout([Logout]):::stop
+
+  %% QR Scanner branches
+  QR --> ScanResult{What did QR encode?}
+  ScanResult -->|Resident| ResidentProfile["Resident Profile"]:::page
+  ScanResult -->|Request| RequestDetail
+  ScanResult -->|Certificate| RequestDetail
+
+  %% Residents flow
+  ResidentsList --> AddResident["Add Resident<br/>(form)"]:::page
+  AddResident --> SaveRes[("Save to Firestore")]:::ext
+  SaveRes --> ResidentsList
+  ResidentsList --> ResidentProfile
+  ResidentProfile --> EditRes["Edit Resident"]:::page
+  EditRes --> SaveRes
+  ResidentProfile --> GenCert["Generate Certificate<br/>(residency / indigency)"]:::page
+
+  %% Households flow
+  HouseholdsList --> AddHH["Add Household"]:::page
+  HouseholdsList --> MapHH["Household Map<br/>(Leaflet)"]:::page
+  HouseholdsList --> HHDetail["Household Detail"]:::page
+  AddHH --> SaveHH[("Save to Firestore")]:::ext
+  SaveHH --> HouseholdsList
+  HHDetail --> EditHH["Edit Household"]:::page
+  EditHH --> SaveHH
+
+  %% Requests flow
+  RequestsList --> RequestDetail["Request Detail"]:::page
+  RequestDetail --> Process{Action?}
+  Process -->|Process / Update status| UpdateReq[("Update request<br/>(Firestore)")]:::ext
+  Process -->|Generate certificate| GenCert
+  UpdateReq --> NotifyRes["Notify resident<br/>(in-app + optional SMS/Email)"]:::ext
+  GenCert --> NotifyRes
+  NotifyRes --> RequestsList
+
+  classDef start fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20;
+  classDef stop fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#b71c1c;
+  classDef page fill:#e3f2fd,stroke:#1565c0,stroke-width:1.5px,color:#0d47a1;
+  classDef ext fill:#fff3e0,stroke:#ef6c00,stroke-width:1.5px,color:#e65100;

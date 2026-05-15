@@ -1,0 +1,39 @@
+%% BRIMS Staff — full start → end session
+flowchart TB
+  S([START — User opens BRIMS]) --> L1[/login — Login page/]
+  L1 --> L2[Enter email + password]
+  L2 --> L3{Valid input?}
+  L3 -->|No| L2
+  L3 -->|Yes| L4[AuthService.login → Firestore]
+  L4 --> L5{Credentials OK?}
+  L5 -->|No| L2
+  L5 -->|Yes| L6[authGuard + roleGuard → role = Staff]
+  L6 --> L7[/staff/dashboard — Staff dashboard/]
+
+  L7 --> W1[Review stats · recent requests · notifications]
+  W1 --> W2[/staff/requests — Requests queue/]
+  W2 --> W3[Select request → /staff/requests/:id]
+  W3 --> W4{Pending or For Review?}
+  W4 -->|Yes| W5{Approve or reject?}
+  W5 -->|Approve| W6[Status → Approved · download cert · QR]
+  W5 -->|Reject| W7[Reason required → Status → Rejected]
+  W6 --> W8
+  W7 --> W8
+  W4 -->|Already final| W8[Back to requests list]
+
+  W8 --> W9[/staff/residents — List · add · profile/]
+  W9 --> W10[/staff/households — List · map · add · edit/]
+  W10 --> W11[/staff/reports — Reports · PDF/]
+  W11 --> W12[/staff/qr-scanner/]
+  W12 --> W13[/staff/settings/]
+  W13 --> W14[/staff/profile/]
+
+  W14 --> X1[Profile menu → Logout]
+  X1 --> X2{Confirm logout?}
+  X2 -->|Cancel| W14
+  X2 -->|Yes| X3[auth.logout — clear session]
+  X3 --> X4[/login/]
+  X4 --> E([END — Session ended])
+
+  classDef startEnd fill:#0e7490,stroke:#155e75,color:#fff
+  class S,E startEnd

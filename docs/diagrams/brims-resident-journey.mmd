@@ -1,0 +1,43 @@
+%% BRIMS Resident — full start → end session
+flowchart TB
+  S([START — User opens BRIMS]) --> L1[/login — Login page/]
+  L1 --> L2[Enter email + password]
+  L2 --> L3{Valid input?}
+  L3 -->|No| L2
+  L3 -->|Yes| L4[AuthService.login → Firestore]
+  L4 --> L5{Credentials OK?}
+  L5 -->|No| L2
+  L5 -->|Yes| L6[authGuard + roleGuard → role = Resident]
+  L6 --> L7[/resident/dashboard — Resident dashboard/]
+
+  L7 --> W1[View welcome · quick actions · recent requests]
+  W1 --> W2{Need a barangay document?}
+  W2 -->|No| W8
+  W2 -->|Yes| W3[/resident/request-certificate/]
+  W3 --> W4[Choose type · enter purpose]
+  W4 --> W5[Submit → status = Pending]
+  W5 --> W6[/resident/requests — My Requests/]
+  W6 --> W7[/resident/requests/:id — Track status/]
+
+  W7 --> W7a{Staff decision}
+  W7a -->|Approved| W7b[View approved · approver info]
+  W7a -->|Rejected| W7c[View rejection reason]
+  W7a -->|Pending / For Review| W7d[Wait · refresh list]
+  W7b --> W8
+  W7c --> W8
+  W7d --> W8
+
+  W8[/resident/profile/]
+  W8 --> W9[/resident/reports/]
+  W9 --> W10[/resident/settings/]
+  W10 --> W11[Notifications · mark read]
+
+  W11 --> X1[Profile menu → Logout]
+  X1 --> X2{Confirm logout?}
+  X2 -->|Cancel| W10
+  X2 -->|Yes| X3[auth.logout — clear session]
+  X3 --> X4[/login/]
+  X4 --> E([END — Session ended])
+
+  classDef startEnd fill:#047857,stroke:#065f46,color:#fff
+  class S,E startEnd

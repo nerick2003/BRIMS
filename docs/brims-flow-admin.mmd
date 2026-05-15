@@ -1,0 +1,61 @@
+flowchart TD
+  Start([Admin opens app]):::start --> Login["Login Page"]
+  Login -->|Forgot password| Forgot["Forgot Password"]
+  Forgot --> Reset["Reset Password"]
+  Reset --> Login
+  Login -->|Valid admin login| Dash["Admin Dashboard<br/>(full access)"]:::page
+
+  %% Shared staff capabilities (collapsed)
+  Dash --> StaffOps["Staff Operations<br/>(Residents, Households, Requests,<br/>Reports, QR Scanner, Profile)"]:::shared
+
+  %% Admin-only branches
+  Dash --> Users["Users & Roles"]:::admin
+  Dash --> SMS["SMS Broadcast"]:::admin
+  Dash --> Email["Email Broadcast"]:::admin
+  Dash --> Audit["Audit Log"]:::admin
+  Dash --> Archives["Archives"]:::admin
+  Dash --> SysSettings["System Settings"]:::admin
+  Dash --> Notif["Notifications Bell"]:::page
+  Dash --> Logout([Logout]):::stop
+
+  %% Approval branch (under shared Requests)
+  StaffOps --> ReqDetail["Request Detail"]:::page
+  ReqDetail --> Decide{Admin decision}
+  Decide -->|Approve| Approve[("Mark approved<br/>+ generate certificate")]:::ext
+  Decide -->|Reject| Reject[("Mark rejected")]:::ext
+  Decide -->|Archive| ArchiveReq[("Move to Archives")]:::ext
+  Approve --> NotifyRes["Notify resident<br/>(in-app + SMS / Email)"]:::ext
+  Reject --> NotifyRes
+  ArchiveReq --> Archives
+
+  %% Users & Roles flow
+  Users --> AddUser["Add Admin / Staff account"]:::page
+  Users --> EditRole["Edit role description<br/>+ permissions"]:::page
+  Users --> ToggleUser["Activate / Deactivate user"]:::page
+  Users --> ArchiveUser["Archive user account"]:::page
+  AddUser --> SaveUser[("Save user<br/>(Firestore)")]:::ext
+  EditRole --> SaveUser
+  ToggleUser --> SaveUser
+  ArchiveUser --> Archives
+
+  %% Broadcast flows
+  SMS --> ComposeSMS["Compose SMS<br/>(select recipients)"]
+  ComposeSMS --> SendSMS[("Send via backend<br/>→ Twilio")]:::ext
+  SendSMS --> Audit
+
+  Email --> ComposeEmail["Compose Email<br/>(select recipients)"]
+  ComposeEmail --> SendEmail[("Send via backend<br/>→ SMTP / Nodemailer")]:::ext
+  SendEmail --> Audit
+
+  %% Archives flow
+  Archives --> BrowseArc["Browse archived<br/>(residents / households /<br/>requests / users)"]:::page
+  BrowseArc --> RestoreItem{Restore?}
+  RestoreItem -->|Yes| DoRestore[("Restore to active<br/>(Firestore)")]:::ext
+  RestoreItem -->|No| BrowseArc
+
+  classDef start fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20;
+  classDef stop fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#b71c1c;
+  classDef page fill:#e3f2fd,stroke:#1565c0,stroke-width:1.5px,color:#0d47a1;
+  classDef admin fill:#f3e5f5,stroke:#6a1b9a,stroke-width:1.5px,color:#4a148c;
+  classDef shared fill:#ede7f6,stroke:#4527a0,stroke-width:1.5px,color:#311b92;
+  classDef ext fill:#fff3e0,stroke:#ef6c00,stroke-width:1.5px,color:#e65100;

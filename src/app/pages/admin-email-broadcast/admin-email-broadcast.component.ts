@@ -28,7 +28,11 @@ export class AdminEmailBroadcastComponent {
     const trimmedMessage = this.message.trim();
 
     if (!trimmedEmail || !trimmedSubject || !trimmedMessage) {
-      this.notifications.warning('Please enter email, subject, and message.', 'Missing information');
+      this.notifications.notifyAdminAndStaff({
+        type: 'warning',
+        message: 'Please enter email, subject, and message.',
+        title: 'Missing information',
+      });
       return;
     }
 
@@ -41,12 +45,20 @@ export class AdminEmailBroadcastComponent {
     }).subscribe({
       next: (res: EmailResponse) => {
         if (res.success) {
-          this.notifications.success('Email sent successfully.', 'Email Notification');
+          this.notifications.notifyAdminAndStaff({
+            type: 'success',
+            message: 'Email sent successfully.',
+            title: 'Email Notification',
+          });
           this.email = '';
           this.subject = '';
           this.message = '';
         } else {
-          this.notifications.error(res.error || 'Failed to send email.', 'Email Error');
+          this.notifications.notifyAdminAndStaff({
+            type: 'error',
+            message: res.error || 'Failed to send email.',
+            title: 'Email Error',
+          });
         }
       },
       error: (err) => {

@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4300 1292" width="4300" height="1292">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="4" orient="auto">
+      <polygon points="0 0, 12 4, 0 8" fill="#334155"/>
+    </marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="#f8fafc"/>
+  <text x="2150.0" y="72" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="40" font-weight="700" fill="#0f172a">BRIMS — Entity Relationship Diagram (Overview)</text>
+  <text x="2150.0" y="108" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="20" fill="#475569">Barangay Resident Information Management System · Firestore / local storage</text>
+
+  <g filter="url(#shadow)">
+<g id="entity-ROLE">
+  <rect x="2000" y="60" width="420" height="150" rx="10" fill="#ffffff" stroke="#1d4ed8" stroke-width="3"/>
+  <rect x="2000" y="60" width="420" height="48" rx="10" fill="#1d4ed8"/>
+  <rect x="2000" y="98" width="420" height="10" fill="#1d4ed8"/>
+  <text x="2210.0" y="92" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#ffffff">ROLE</text>
+  <text x="2014" y="128" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">id</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="2406" y="128" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#b91c1c">PK</text>
+  <text x="2014" y="150" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">name</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="2406" y="150" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#c2410c">UK</text>
+  <text x="2014" y="172" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-style="italic" fill="#64748b">Admin · Staff · Resident</text>
+</g>
+<g id="entity-SYSTEM_USER">
+  <rect x="2000" y="260" width="420" height="172" rx="10" fill="#ffffff" stroke="#1d4ed8" stroke-width="3"/>
+  <rect x="2000" y="260" width="420" height="48" rx="10" fill="#1d4ed8"/>
+  <rect x="2000" y="298" width="420" height="10" fill="#1d4ed8"/>
+  <text x="2210.0" y="292" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#ffffff">SYSTEM_USER</text>
+  <text x="2014" y="328" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">id</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="2406" y="328" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#b91c1c">PK</text>
+  <text x="2014" y="350" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">email</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="2406" y="350" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#c2410c">UK</text>
+  <text x="2014" y="372" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">role</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="2406" y="372" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#1d4ed8">FK</text>
+  <text x="2014" y="394" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-style="italic" fill="#64748b">Staff / Admin accounts</text>
+</g>
+<g id="entity-RESIDENT">
+  <rect x="120" y="200" width="420" height="172" rx="10" fill="#ffffff" stroke="#047857" stroke-width="3"/>
+  <rect x="120" y="200" width="420" height="48" rx="10" fill="#047857"/>
+  <rect x="120" y="238" width="420" height="10" fill="#047857"/>
+  <text x="330.0" y="232" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#ffffff">RESIDENT</text>
+  <text x="134" y="268" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">id</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="526" y="268" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#b91c1c">PK</text>
+  <text x="134" y="290" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">residentId</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="526" y="290" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#c2410c">UK</text>
+  <text x="134" y="312" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">name</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="134" y="334" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-style="italic" fill="#64748b">Barangay residents · portal login</text>
+</g>
+<g id="entity-HOUSEHOLD">
+  <rect x="120" y="480" width="420" height="172" rx="10" fill="#ffffff" stroke="#047857" stroke-width="3"/>
+  <rect x="120" y="480" width="420" height="48" rx="10" fill="#047857"/>
+  <rect x="120" y="518" width="420" height="10" fill="#047857"/>
+  <text x="330.0" y="512" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#ffffff">HOUSEHOLD</text>
+  <text x="134" y="548" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">id</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="526" y="548" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#b91c1c">PK</text>
+  <text x="134" y="570" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">householdId</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="526" y="570" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#c2410c">UK</text>
+  <text x="134" y="592" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">headId</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="526" y="592" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#1d4ed8">FK</text>
+  <text x="134" y="614" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-style="italic" fill="#64748b">GIS · risk level · purok</text>
+</g>
+<g id="entity-HOUSEHOLD_MEMBER">
+  <rect x="120" y="760" width="420" height="172" rx="10" fill="#ffffff" stroke="#059669" stroke-width="3"/>
+  <rect x="120" y="760" width="420" height="48" rx="10" fill="#059669"/>
+  <rect x="120" y="798" width="420" height="10" fill="#059669"/>
+  <text x="330.0" y="792" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#ffffff">HOUSEHOLD_MEMBER</text>
+  <text x="134" y="828" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">householdId</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="526" y="828" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#b91c1c">PK,FK</text>
+  <text x="134" y="850" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">residentId</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="526" y="850" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#b91c1c">PK,FK</text>
+  <text x="134" y="872" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">relationship</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="134" y="894" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-style="italic" fill="#64748b">Embedded in household.members[]</text>
+</g>
+<g id="entity-CERTIFICATE_REQUEST">
+  <rect x="1080" y="360" width="420" height="172" rx="10" fill="#ffffff" stroke="#b45309" stroke-width="3"/>
+  <rect x="1080" y="360" width="420" height="48" rx="10" fill="#b45309"/>
+  <rect x="1080" y="398" width="420" height="10" fill="#b45309"/>
+  <text x="1290.0" y="392" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#ffffff">CERTIFICATE_REQUEST</text>
+  <text x="1094" y="428" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">id</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="1486" y="428" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#b91c1c">PK</text>
+  <text x="1094" y="450" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">residentId</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="1486" y="450" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#1d4ed8">FK</text>
+  <text x="1094" y="472" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">status</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="1094" y="494" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-style="italic" fill="#64748b">Pending → Approved / Rejected</text>
+</g>
+<g id="entity-CERTIFICATE">
+  <rect x="1080" y="640" width="420" height="172" rx="10" fill="#ffffff" stroke="#b45309" stroke-width="3"/>
+  <rect x="1080" y="640" width="420" height="48" rx="10" fill="#b45309"/>
+  <rect x="1080" y="678" width="420" height="10" fill="#b45309"/>
+  <text x="1290.0" y="672" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#ffffff">CERTIFICATE</text>
+  <text x="1094" y="708" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">id</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="1486" y="708" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#b91c1c">PK</text>
+  <text x="1094" y="730" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">requestId</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="1486" y="730" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#1d4ed8">FK</text>
+  <text x="1094" y="752" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">qrCode</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="1094" y="774" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-style="italic" fill="#64748b">Issued document</text>
+</g>
+<g id="entity-PORTAL_NOTIFICATION">
+  <rect x="1080" y="900" width="420" height="172" rx="10" fill="#ffffff" stroke="#6d28d9" stroke-width="3"/>
+  <rect x="1080" y="900" width="420" height="48" rx="10" fill="#6d28d9"/>
+  <rect x="1080" y="938" width="420" height="10" fill="#6d28d9"/>
+  <text x="1290.0" y="932" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#ffffff">PORTAL_NOTIFICATION</text>
+  <text x="1094" y="968" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">id</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="1486" y="968" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#b91c1c">PK</text>
+  <text x="1094" y="990" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">audience</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="1094" y="1012" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">linkRequestId</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="1486" y="1012" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#1d4ed8">FK</text>
+  <text x="1094" y="1034" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-style="italic" fill="#64748b">Firestore portalNotifications</text>
+</g>
+<g id="entity-AUDIT_LOG_ENTRY">
+  <rect x="3520" y="240" width="420" height="172" rx="10" fill="#ffffff" stroke="#475569" stroke-width="3"/>
+  <rect x="3520" y="240" width="420" height="48" rx="10" fill="#475569"/>
+  <rect x="3520" y="278" width="420" height="10" fill="#475569"/>
+  <text x="3730.0" y="272" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#ffffff">AUDIT_LOG_ENTRY</text>
+  <text x="3534" y="308" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">id</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="3926" y="308" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#b91c1c">PK</text>
+  <text x="3534" y="330" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">userId</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="3926" y="330" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#1d4ed8">FK</text>
+  <text x="3534" y="352" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">category</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="3534" y="374" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-style="italic" fill="#64748b">localStorage audit trail</text>
+</g>
+<g id="entity-APP_NOTIFICATION">
+  <rect x="3520" y="520" width="420" height="172" rx="10" fill="#ffffff" stroke="#6d28d9" stroke-width="3"/>
+  <rect x="3520" y="520" width="420" height="48" rx="10" fill="#6d28d9"/>
+  <rect x="3520" y="558" width="420" height="10" fill="#6d28d9"/>
+  <text x="3730.0" y="552" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#ffffff">APP_NOTIFICATION</text>
+  <text x="3534" y="588" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">id</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="3926" y="588" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#b91c1c">PK</text>
+  <text x="3534" y="610" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">visibleToRoles</tspan><tspan fill="#475569"> : string[]</tspan></text>
+  <text x="3534" y="632" font-family="Consolas, Segoe UI, monospace" font-size="17" fill="#0f172a"><tspan font-weight="600">linkRequestId</tspan><tspan fill="#475569"> : string</tspan></text>
+  <text x="3926" y="632" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#1d4ed8">FK</text>
+  <text x="3534" y="654" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-style="italic" fill="#64748b">Staff bell notifications</text>
+</g>
+  </g>
+
+  <g opacity="0.95">
+
+  <path d="M 2210.0 210 C 2210.0 210, 2210.0 260, 2210.0 260" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="2210.0" y="227.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600" fill="#334155">1 — *</text>
+  <text x="2210.0" y="249.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#64748b">assigned to</text>
+
+  <path d="M 2000 346.0 C 1750.0 346.0, 1750.0 446.0, 1500 446.0" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="1750.0" y="388.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600" fill="#334155">1 — *</text>
+  <text x="1750.0" y="410.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#64748b">approves / rejects</text>
+
+  <path d="M 2000 346.0 C 1750.0 346.0, 1750.0 726.0, 1500 726.0" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="1750.0" y="528.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600" fill="#334155">1 — *</text>
+  <text x="1750.0" y="550.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#64748b">issues</text>
+
+  <path d="M 2420 346.0 C 2970.0 346.0, 2970.0 326.0, 3520 326.0" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="2970.0" y="328.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600" fill="#334155">1 — *</text>
+  <text x="2970.0" y="350.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#64748b">generates</text>
+
+  <path d="M 2420 346.0 C 2970.0 346.0, 2970.0 606.0, 3520 606.0" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="2970.0" y="468.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600" fill="#334155">1 — *</text>
+  <text x="2970.0" y="490.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#64748b">may target</text>
+
+  <path d="M 330.0 372 C 330.0 372, 330.0 480, 330.0 480" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="330.0" y="418.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600" fill="#334155">1 — 0..1</text>
+  <text x="330.0" y="440.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#64748b">heads (headId)</text>
+
+  <path d="M 330.0 372 C 330.0 372, 330.0 760, 330.0 760" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="330.0" y="558.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600" fill="#334155">1 — *</text>
+  <text x="330.0" y="580.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#64748b">member of</text>
+
+  <path d="M 330.0 652 C 330.0 652, 330.0 760, 330.0 760" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="330.0" y="698.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600" fill="#334155">1 — *</text>
+  <text x="330.0" y="720.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#64748b">contains</text>
+
+  <path d="M 540 286.0 C 810.0 286.0, 810.0 446.0, 1080 446.0" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="810.0" y="358.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600" fill="#334155">1 — *</text>
+  <text x="810.0" y="380.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#64748b">submits</text>
+
+  <path d="M 540 286.0 C 810.0 286.0, 810.0 726.0, 1080 726.0" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="810.0" y="498.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600" fill="#334155">1 — *</text>
+  <text x="810.0" y="520.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#64748b">owns</text>
+
+  <path d="M 540 286.0 C 810.0 286.0, 810.0 986.0, 1080 986.0" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="810.0" y="628.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600" fill="#334155">1 — *</text>
+  <text x="810.0" y="650.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#64748b">receives</text>
+
+  <path d="M 1290.0 532 C 1290.0 532, 1290.0 640, 1290.0 640" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="1290.0" y="578.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600" fill="#334155">1 — 0..1</text>
+  <text x="1290.0" y="600.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#64748b">results in</text>
+
+  <path d="M 1290.0 532 C 1290.0 532, 1290.0 900, 1290.0 900" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="1290.0" y="708.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600" fill="#334155">1 — *</text>
+  <text x="1290.0" y="730.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#64748b">relates to</text>
+
+  <path d="M 1500 446.0 C 2510.0 446.0, 2510.0 606.0, 3520 606.0" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="2510.0" y="518.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600" fill="#334155">1 — *</text>
+  <text x="2510.0" y="540.0" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#64748b">relates to</text>
+  </g>
+
+  <g transform="translate(80, 1142)">
+    <rect x="0" y="0" width="4140" height="120" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+    <text x="24" y="36" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#0f172a">Legend</text>
+    <text x="24" y="68" font-family="Segoe UI, Arial, sans-serif" font-size="18" fill="#0f172a"><tspan fill="#b91c1c" font-weight="700">PK</tspan> Primary Key · <tspan fill="#1d4ed8" font-weight="700">FK</tspan> Foreign Key · <tspan fill="#c2410c" font-weight="700">UK</tspan> Unique Key</text>
+    <text x="24" y="98" font-family="Segoe UI, Arial, sans-serif" font-size="18" fill="#475569">Blue = users &amp; roles · Green = residents &amp; households · Amber = certificates · Purple = notifications · Gray = audit log</text>
+  </g>
+</svg>

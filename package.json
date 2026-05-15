@@ -8,6 +8,8 @@
     "watch": "ng build --watch --configuration development",
     "api": "json-server --watch server/db.json --port 3000",
     "seed:firestore": "node scripts/seed-firestore.js",
+    "docs:tech-stack-pdf": "node scripts/generate-tech-stack-pdf.js",
+    "docs:diagrams": "node scripts/build-role-diagram-html.js && node scripts/generate-role-flowchart-diagram.js",
     "postinstall": "node scripts/ensure-config.js"
   },
   "private": true,

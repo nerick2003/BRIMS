@@ -145,7 +145,11 @@ export class AdminSmsBroadcastComponent {
     
     if (this.broadcastSmsToAllResidents) {
       if (!trimmedMessage) {
-        this.notifications.warning('Please enter a message to broadcast.', 'Missing information');
+        this.notifications.notifyAdminAndStaff({
+          type: 'warning',
+          message: 'Please enter a message to broadcast.',
+          title: 'Missing information',
+        });
         this.isSending = false;
         return;
       }
@@ -155,7 +159,11 @@ export class AdminSmsBroadcastComponent {
         .filter((c): c is string => !!c);
 
       if (!recipients.length) {
-        this.notifications.warning('No residents with contact numbers found.', 'No recipients');
+        this.notifications.notifyAdminAndStaff({
+          type: 'warning',
+          message: 'No residents with contact numbers found.',
+          title: 'No recipients',
+        });
         this.isSending = false;
         return;
       }
@@ -169,10 +177,18 @@ export class AdminSmsBroadcastComponent {
               failCount > 0
                 ? `SMS sent to ${successCount} resident(s). ${failCount} failed.`
                 : `SMS sent to ${successCount} resident(s).`;
-            this.notifications.success(summary, 'SMS Broadcast');
+            this.notifications.notifyAdminAndStaff({
+              type: 'success',
+              message: summary,
+              title: 'SMS Broadcast',
+            });
             this.message = '';
           } else {
-            this.notifications.error(res.results?.length ? 'Some SMS messages failed.' : 'Failed to send SMS broadcast.', 'SMS Error');
+            this.notifications.notifyAdminAndStaff({
+              type: 'error',
+              message: res.results?.length ? 'Some SMS messages failed.' : 'Failed to send SMS broadcast.',
+              title: 'SMS Error',
+            });
           }
         },
         error: (err) => {
@@ -187,7 +203,11 @@ export class AdminSmsBroadcastComponent {
       const trimmedPhone = this.phone.trim();
 
       if (!trimmedPhone || !trimmedMessage) {
-        this.notifications.warning('Please enter both phone number and message.', 'Missing information');
+        this.notifications.notifyAdminAndStaff({
+          type: 'warning',
+          message: 'Please enter both phone number and message.',
+          title: 'Missing information',
+        });
         this.isSending = false;
         return;
       }
@@ -195,11 +215,19 @@ export class AdminSmsBroadcastComponent {
       this.sms.sendSms({ to: trimmedPhone, message: trimmedMessage }).subscribe({
         next: (res: SmsResponse) => {
           if (res.success) {
-            this.notifications.success('SMS sent successfully.', 'SMS Notification');
+            this.notifications.notifyAdminAndStaff({
+              type: 'success',
+              message: 'SMS sent successfully.',
+              title: 'SMS Notification',
+            });
             this.phone = '';
             this.message = '';
           } else {
-            this.notifications.error(res.error || 'Failed to send SMS.', 'SMS Error');
+            this.notifications.notifyAdminAndStaff({
+              type: 'error',
+              message: res.error || 'Failed to send SMS.',
+              title: 'SMS Error',
+            });
           }
         },
         error: (err) => {
@@ -221,7 +249,11 @@ export class AdminSmsBroadcastComponent {
 
     if (this.broadcastEmailToAllResidents) {
       if (!trimmedSubject || !trimmedMessage) {
-        this.notifications.warning('Please enter subject and message to broadcast.', 'Missing information');
+        this.notifications.notifyAdminAndStaff({
+          type: 'warning',
+          message: 'Please enter subject and message to broadcast.',
+          title: 'Missing information',
+        });
         this.isSendingEmail = false;
         return;
       }
@@ -231,7 +263,11 @@ export class AdminSmsBroadcastComponent {
         .filter((e): e is string => !!e);
 
       if (!recipients.length) {
-        this.notifications.warning('No residents with email addresses found.', 'No recipients');
+        this.notifications.notifyAdminAndStaff({
+          type: 'warning',
+          message: 'No residents with email addresses found.',
+          title: 'No recipients',
+        });
         this.isSendingEmail = false;
         return;
       }
@@ -264,11 +300,19 @@ export class AdminSmsBroadcastComponent {
                 failCount > 0
                   ? `Email sent to ${successCount} resident(s). ${failCount} failed.`
                   : `Email sent to ${successCount} resident(s).`;
-              this.notifications.success(summary, 'Email Broadcast');
+              this.notifications.notifyAdminAndStaff({
+                type: 'success',
+                message: summary,
+                title: 'Email Broadcast',
+              });
               this.subject = '';
               this.emailMessage = '';
             } else {
-              this.notifications.error(res.results?.length ? 'Some emails failed.' : 'Failed to send email broadcast.', 'Email Error');
+              this.notifications.notifyAdminAndStaff({
+                type: 'error',
+                message: res.results?.length ? 'Some emails failed.' : 'Failed to send email broadcast.',
+                title: 'Email Error',
+              });
             }
           },
           error: (err) => {
@@ -280,7 +324,11 @@ export class AdminSmsBroadcastComponent {
         });
     } else {
       if (!trimmedEmail || !trimmedSubject || !trimmedMessage) {
-        this.notifications.warning('Please enter email, subject, and message.', 'Missing information');
+        this.notifications.notifyAdminAndStaff({
+          type: 'warning',
+          message: 'Please enter email, subject, and message.',
+          title: 'Missing information',
+        });
         this.isSendingEmail = false;
         return;
       }
@@ -297,12 +345,20 @@ export class AdminSmsBroadcastComponent {
         .subscribe({
           next: (res: EmailResponse) => {
             if (res.success) {
-              this.notifications.success('Email sent successfully.', 'Email Notification');
+              this.notifications.notifyAdminAndStaff({
+                type: 'success',
+                message: 'Email sent successfully.',
+                title: 'Email Notification',
+              });
               this.email = '';
               this.subject = '';
               this.emailMessage = '';
             } else {
-              this.notifications.error(res.error || 'Failed to send email.', 'Email Error');
+              this.notifications.notifyAdminAndStaff({
+                type: 'error',
+                message: res.error || 'Failed to send email.',
+                title: 'Email Error',
+              });
             }
           },
           error: (err) => {

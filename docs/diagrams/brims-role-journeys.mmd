@@ -1,0 +1,47 @@
+%% BRIMS — All roles: start terminal → end terminal (overview)
+flowchart TB
+  subgraph ADMIN["ADMIN  /admin"]
+    direction TB
+    A0([START]) --> A1[Login /login]
+    A1 --> A2[Firestore auth]
+    A2 --> A3[Dashboard]
+    A3 --> A4[Requests approve/reject + certificate]
+    A4 --> A5[Residents + Households]
+    A5 --> A6[Archive records]
+    A6 --> A7[Users & Roles · SMS · Email]
+    A7 --> A8[Audit · Reports · QR · Settings]
+    A8 --> A9[Logout confirm]
+    A9 --> A10([END])
+  end
+
+  subgraph STAFF["STAFF  /staff"]
+    direction TB
+    S0([START]) --> S1[Login /login]
+    S1 --> S2[Firestore auth]
+    S2 --> S3[Dashboard]
+    S3 --> S4[Requests approve/reject + certificate]
+    S4 --> S5[Residents + Households]
+    S5 --> S6[Reports · QR · Settings]
+    S6 --> S7[Logout confirm]
+    S7 --> S8([END])
+  end
+
+  subgraph RESIDENT["RESIDENT  /resident"]
+    direction TB
+    R0([START]) --> R1[Login /login]
+    R1 --> R2[Firestore auth]
+    R2 --> R3[Dashboard]
+    R3 --> R4[Request Certificate → Pending]
+    R4 --> R5[My Requests track status]
+    R5 --> R6[Profile · Reports · Settings]
+    R6 --> R7[Logout confirm]
+    R7 --> R8([END])
+  end
+
+  classDef admin fill:#4338ca,stroke:#312e81,color:#fff
+  classDef staff fill:#0e7490,stroke:#155e75,color:#fff
+  classDef resident fill:#047857,stroke:#065f46,color:#fff
+
+  class A0,A10 admin
+  class S0,S8 staff
+  class R0,R8 resident

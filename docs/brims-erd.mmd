@@ -1,0 +1,168 @@
+erDiagram
+  %% ============================================================
+  %% BRIMS — Entity Relationship Diagram
+  %% Source: src/app/services/*.ts interfaces (Firestore-backed)
+  %% ============================================================
+
+  RESIDENT {
+    string id PK "Firestore doc id"
+    string residentId UK "Barangay ID e.g. BRGY-1001"
+    string name
+    int age
+    string gender
+    string purok
+    string birthdate
+    string placeOfBirth
+    string birthCertificateNumber UK
+    string bloodType
+    string civilStatus
+    string nationality
+    string contact
+    string email
+    string password "hashed (portal login)"
+    string address
+    string profilePicture "data URL"
+    bool archived
+    string archivedAt
+    string archivedReason
+  }
+
+  HOUSEHOLD {
+    string id PK
+    string householdId UK "Display id e.g. HH-001"
+    string headId FK "→ Resident.residentId"
+    string address
+    string purok
+    number latitude
+    number longitude
+    string status "Active / Relocated / 4Ps"
+    string riskLevel "flood_prone / fire_risk"
+    string barangayZone
+    bool archived
+    string archivedAt
+  }
+
+  HOUSEHOLD_MEMBER {
+    string householdId FK "→ Household.id"
+    string residentId FK "→ Resident.residentId"
+    string name "denormalized"
+    int age
+    string gender
+    string relationship "Head / Spouse / Child / etc."
+    string birthdate
+    string civilStatus
+  }
+
+  CERTIFICATE_REQUEST {
+    string id PK
+    string type "Residency / Indigency / Clearance / etc."
+    string purpose
+    string status "Pending / For Review / Approved / Rejected"
+    string date "ISO timestamp"
+    string residentId FK "→ Resident.residentId"
+    string approvedById FK "→ SystemUser.id"
+    string approvedByName
+    string approvedAt
+    string rejectedById FK "→ SystemUser.id"
+    string rejectedByName
+    string rejectedAt
+    string rejectedReason
+    bool archived
+    string archivedAt
+  }
+
+  CERTIFICATE {
+    string id PK
+    string requestId FK "→ CertificateRequest.id"
+    string residentId FK "→ Resident.residentId"
+    string type
+    string issuedById FK "→ SystemUser.id"
+    string issuedAt
+    string qrCode "encoded payload"
+  }
+
+  SYSTEM_USER {
+    string id PK
+    string name
+    string email UK
+    string role FK "→ Role.name (Admin / Staff / Resident)"
+    string status "Active / Inactive"
+    string password "hashed"
+    string profilePicture "data URL"
+    string lastLogin
+    string createdAt
+    bool archived
+    string archivedAt
+  }
+
+  ROLE {
+    string id PK
+    string name UK "Admin / Staff / Resident"
+    string description
+    string permissions "string[] (e.g. MANAGE_USERS, APPROVE_REQUESTS)"
+    int userCount
+  }
+
+  AUDIT_LOG_ENTRY {
+    string id PK
+    string timestamp
+    string action "Add resident, Update request status, ..."
+    string category "auth / resident / household / user / request / role / system"
+    string userId FK "→ SystemUser.id (actor)"
+    string userName
+    string userEmail
+    string details
+    string entityId "polymorphic ref"
+    string entityName
+  }
+
+  PORTAL_NOTIFICATION {
+    string id PK
+    string audience "resident / staff"
+    string recipientBarangayKey "→ Resident.residentId (when audience=resident)"
+    string type "success / error / warning / info"
+    string title
+    string message
+    string linkRequestId FK "→ CertificateRequest.id (optional)"
+    bool read
+    timestamp createdAt
+  }
+
+  APP_NOTIFICATION {
+    string id PK
+    string type "success / error / warning / info"
+    string title
+    string message
+    string[] visibleToRoles "admin / staff / resident"
+    string[] visibleToUserIds "→ SystemUser.id"
+    string linkRequestId FK "→ CertificateRequest.id (optional)"
+    string[] actionRoute
+    bool read
+    date createdAt
+  }
+
+  %% ============================================================
+  %% Relationships
+  %% ============================================================
+
+  RESIDENT ||--o| HOUSEHOLD : "heads (1)"
+  HOUSEHOLD ||--o{ HOUSEHOLD_MEMBER : "contains"
+  RESIDENT ||--o{ HOUSEHOLD_MEMBER : "appears as"
+
+  RESIDENT ||--o{ CERTIFICATE_REQUEST : "submits"
+  CERTIFICATE_REQUEST ||--o| CERTIFICATE : "yields"
+  RESIDENT ||--o{ CERTIFICATE : "owns"
+
+  SYSTEM_USER ||--o{ CERTIFICATE_REQUEST : "approves / rejects"
+  SYSTEM_USER ||--o{ CERTIFICATE : "issues"
+
+  ROLE ||--o{ SYSTEM_USER : "assigned to"
+
+  SYSTEM_USER ||--o{ AUDIT_LOG_ENTRY : "generates"
+
+  SYSTEM_USER ||--o{ PORTAL_NOTIFICATION : "receives (staff)"
+  RESIDENT ||--o{ PORTAL_NOTIFICATION : "receives (resident)"
+  CERTIFICATE_REQUEST ||--o{ PORTAL_NOTIFICATION : "linked to"
+
+  SYSTEM_USER ||--o{ APP_NOTIFICATION : "receives"
+  CERTIFICATE_REQUEST ||--o{ APP_NOTIFICATION : "linked to"

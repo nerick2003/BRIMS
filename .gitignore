@@ -2,6 +2,5 @@ node_modules
 .angular
 serviceAccountKey.json
 .cursor/rules/
-docs/
 backend/.env
 src/assets/config.json

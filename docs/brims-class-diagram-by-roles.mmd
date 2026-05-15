@@ -1,0 +1,231 @@
+classDiagram
+  direction LR
+
+  %% ============================================================
+  %% Role hierarchy (actors / accounts in BRIMS)
+  %% ============================================================
+  class User {
+    <<abstract>>
+    +string id
+    +string name
+    +string email
+    +string role
+    +Status status
+    +string password
+    +string profilePicture
+    +Date lastLogin
+    +Date createdAt
+    +bool archived
+    +login(credentials)
+    +logout()
+    +resetPassword()
+    +updateProfile()
+    +viewNotifications()
+  }
+
+  class Admin {
+    +Permission[] permissions
+    +manageUsersAndRoles()
+    +approveRequest(id)
+    +rejectRequest(id, reason)
+    +broadcastSMS(recipients, message)
+    +broadcastEmail(recipients, subject, body)
+    +viewAuditLog()
+    +archiveRecord(entity, id)
+    +restoreRecord(entity, id)
+    +editRolePermissions(roleId)
+    +configureSystemSettings()
+  }
+
+  class Staff {
+    +Permission[] permissions
+    +addResident(resident)
+    +updateResident(id, updates)
+    +addHousehold(household)
+    +updateHousehold(id, updates)
+    +processRequest(id, status)
+    +generateCertificate(residentId, type)
+    +scanQRCode()
+    +viewReports()
+    +viewHouseholdMap()
+  }
+
+  class Resident {
+    +string residentId
+    +int age
+    +string gender
+    +string purok
+    +Date birthdate
+    +string placeOfBirth
+    +string birthCertificateNumber
+    +string bloodType
+    +string civilStatus
+    +string nationality
+    +string contact
+    +string address
+    +string archivedReason
+    +requestCertificate(type, purpose)
+    +trackMyRequests()
+    +viewMyProfile()
+    +viewResidentReports()
+    +updateMySettings()
+  }
+
+  User <|-- Admin
+  User <|-- Staff
+  User <|-- Resident
+
+  %% ============================================================
+  %% Authorization
+  %% ============================================================
+  class Role {
+    +string id
+    +string name
+    +string description
+    +string[] permissions
+    +int userCount
+  }
+
+  class Permission {
+    <<enumeration>>
+    MANAGE_USERS
+    MANAGE_ROLES
+    APPROVE_REQUESTS
+    PROCESS_REQUESTS
+    MANAGE_RESIDENTS
+    MANAGE_HOUSEHOLDS
+    VIEW_REPORTS
+    SMS_EMAIL_BROADCAST
+    VIEW_AUDIT_LOG
+    MANAGE_ARCHIVES
+    QR_SCANNER
+    REQUEST_CERTIFICATES
+    VIEW_OWN_PROFILE
+    VIEW_OWN_REQUESTS
+  }
+
+  User "*" --> "1" Role : assigned
+
+  %% ============================================================
+  %% Domain entities
+  %% ============================================================
+  class CertificateRequest {
+    +string id
+    +string type
+    +string purpose
+    +RequestStatus status
+    +Date date
+    +string residentId
+    +string approvedById
+    +string approvedByName
+    +Date approvedAt
+    +string rejectedById
+    +Date rejectedAt
+    +string rejectedReason
+    +bool archived
+    +Date archivedAt
+  }
+
+  class RequestStatus {
+    <<enumeration>>
+    PENDING
+    FOR_REVIEW
+    APPROVED
+    REJECTED
+  }
+
+  class Household {
+    +string id
+    +string householdId
+    +string headId
+    +string address
+    +string purok
+    +number latitude
+    +number longitude
+    +string status
+    +string riskLevel
+    +string barangayZone
+    +bool archived
+    +Date archivedAt
+  }
+
+  class HouseholdMember {
+    +string residentId
+    +string name
+    +int age
+    +string gender
+    +string relationship
+    +Date birthdate
+    +string civilStatus
+  }
+
+  class AuditLogEntry {
+    +string id
+    +string action
+    +string category
+    +string details
+    +string entityId
+    +string entityName
+    +string actorId
+    +Date timestamp
+  }
+
+  class Notification {
+    +string id
+    +NotificationType type
+    +string title
+    +string message
+    +string[] actionRoute
+    +string linkRequestId
+    +bool read
+    +Date createdAt
+  }
+
+  class NotificationType {
+    <<enumeration>>
+    SUCCESS
+    ERROR
+    WARNING
+    INFO
+  }
+
+  class Certificate {
+    +string id
+    +string type
+    +string residentId
+    +string issuedById
+    +Date issuedAt
+    +string qrCode
+  }
+
+  %% ============================================================
+  %% Associations
+  %% ============================================================
+  Resident "1" --> "0..1" Household : belongs to
+  Household "1" o-- "*" HouseholdMember : contains
+  HouseholdMember "*" --> "1" Resident : refers to
+  Household "1" --> "1" Resident : head of
+
+  Resident "1" --> "*" CertificateRequest : submits
+  Staff "1" --> "*" CertificateRequest : processes
+  Admin "1" --> "*" CertificateRequest : approves / rejects
+  CertificateRequest "1" --> "0..1" Certificate : generates
+
+  Admin "1" --> "*" User : manages
+  Admin "1" --> "*" Role : edits
+  Admin "1" --> "*" AuditLogEntry : reviews
+
+  Staff "1" --> "*" Resident : manages
+  Staff "1" --> "*" Household : manages
+  Staff "1" --> "*" Certificate : issues
+
+  User "1" --> "*" Notification : receives
+  User "1" --> "*" AuditLogEntry : generates
+
+  %% ============================================================
+  %% Style hints (Mermaid classDef-style highlights)
+  %% ============================================================
+  cssClass "Admin" admin
+  cssClass "Staff" staff
+  cssClass "Resident" resident
+  cssClass "User" base

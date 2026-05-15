@@ -1,0 +1,68 @@
+%% BRIMS Admin — full start → end session
+flowchart TB
+  S([START — User opens BRIMS]) --> L1[/login — Login page/]
+  L1 --> L2[Enter email + password]
+  L2 --> L3{Valid input?}
+  L3 -->|No| L2
+  L3 -->|Yes| L4[AuthService.login → Firestore]
+  L4 --> L5{Credentials OK?}
+  L5 -->|No| L2
+  L5 -->|Yes| L6[authGuard + roleGuard → role = Admin]
+  L6 --> L7[/admin/dashboard — Admin dashboard/]
+
+  L7 --> W1[Review stats · recent activity · notifications]
+  W1 --> W2[/admin/requests — Open requests queue/]
+  W2 --> W3[Select request → /admin/requests/:id]
+  W3 --> W4{Pending or For Review?}
+  W4 -->|Yes| W5{Approve or reject?}
+  W5 -->|Approve| W6[Status → Approved · record approver]
+  W5 -->|Reject| W7[Enter reason → Status → Rejected]
+  W6 --> W8[Download certificate PDF/PNG · request QR]
+  W7 --> W9[Request leaves active queue or archive later]
+  W8 --> W9
+  W4 -->|Already final| W9
+
+  W9 --> W10{Archive this request?}
+  W10 -->|Yes| W11[/admin/archives — Tab Requests/]
+  W10 -->|No| W12
+  W11 --> W12
+
+  W12[/admin/residents — Residents list/]
+  W12 --> W13{Add or edit?}
+  W13 -->|Add| W14[/admin/residents/add/]
+  W13 -->|Edit| W15[/admin/residents/:id/]
+  W14 --> W16
+  W15 --> W16{Archive resident?}
+  W16 -->|Yes| W17[/admin/archives — Tab Residents/]
+  W16 -->|No| W18
+  W17 --> W18
+
+  W18[/admin/households — List · map · add · edit/]
+  W18 --> W19{Archive household?}
+  W19 -->|Yes| W20[/admin/archives — Tab Households/]
+  W19 -->|No| W21
+  W20 --> W21
+
+  W21[/admin/users — Users & Roles/]
+  W21 --> W22[Add/edit Admin or Staff · permissions]
+  W22 --> W23{Archive staff account?}
+  W23 -->|Yes| W24[/admin/archives — Tab Users/]
+  W23 -->|No| W25
+  W24 --> W25
+
+  W25[/admin/sms · /admin/email — Broadcasts/]
+  W25 --> W26[/admin/audit-log/]
+  W26 --> W27[/admin/reports — Charts · PDF/]
+  W27 --> W28[/admin/qr-scanner/]
+  W28 --> W29[/admin/settings/]
+  W29 --> W30[/admin/profile/]
+
+  W30 --> X1[Profile menu → Logout]
+  X1 --> X2{Confirm logout?}
+  X2 -->|Cancel| W30
+  X2 -->|Yes| X3[auth.logout — clear session · audit]
+  X3 --> X4[/login/]
+  X4 --> E([END — Session ended])
+
+  classDef startEnd fill:#4338ca,stroke:#312e81,color:#fff
+  class S,E startEnd

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BRIMS Role Journeys</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background: #f8fafc; color: #0f172a; }
+    header { padding: 1.5rem 2rem; background: #1e293b; color: #f8fafc; }
+    header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+    header p { margin: 0; opacity: 0.85; font-size: 0.95rem; }
+    header a { color: #93c5fd; }
+    main { max-width: 1600px; margin: 0 auto; padding: 2rem; }
+    section { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; overflow-x: auto; }
+    section h2 { margin: 0 0 1rem; font-size: 1.15rem; padding-bottom: 0.5rem; border-bottom: 3px solid; }
+    section.overview h2 { border-color: #334155; color: #334155; }
+    section.admin h2 { border-color: #4338ca; color: #4338ca; }
+    section.staff h2 { border-color: #0e7490; color: #0e7490; }
+    section.resident h2 { border-color: #047857; color: #047857; }
+    .mermaid { display: flex; justify-content: center; min-height: 80px; }
+    @media print { section { break-inside: avoid; page-break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>BRIMS — Role journey diagrams</h1>
+    <p>Start terminal → end terminal · Open <a href="brims-role-journeys.svg">brims-role-journeys.svg</a> for a printable overview</p>
+  </header>
+  <main>
+    <section class="overview">
+      <h2>Overview — all roles</h2>
+      <pre class="mermaid">flowchart TB
+  subgraph ADMIN["ADMIN  /admin"]
+    direction TB
+    A0([START]) --> A1[Login /login]
+    A1 --> A2[Firestore auth]
+    A2 --> A3[Dashboard]
+    A3 --> A4[Requests approve/reject + certificate]
+    A4 --> A5[Residents + Households]
+    A5 --> A6[Archive records]
+    A6 --> A7[Users & Roles · SMS · Email]
+    A7 --> A8[Audit · Reports · QR · Settings]
+    A8 --> A9[Logout confirm]
+    A9 --> A10([END])
+  end
+
+  subgraph STAFF["STAFF  /staff"]
+    direction TB
+    S0([START]) --> S1[Login /login]
+    S1 --> S2[Firestore auth]
+    S2 --> S3[Dashboard]
+    S3 --> S4[Requests approve/reject + certificate]
+    S4 --> S5[Residents + Households]
+    S5 --> S6[Reports · QR · Settings]
+    S6 --> S7[Logout confirm]
+    S7 --> S8([END])
+  end
+
+  subgraph RESIDENT["RESIDENT  /resident"]
+    direction TB
+    R0([START]) --> R1[Login /login]
+    R1 --> R2[Firestore auth]
+    R2 --> R3[Dashboard]
+    R3 --> R4[Request Certificate → Pending]
+    R4 --> R5[My Requests track status]
+    R5 --> R6[Profile · Reports · Settings]
+    R6 --> R7[Logout confirm]
+    R7 --> R8([END])
+  end
+
+  classDef admin fill:#4338ca,stroke:#312e81,color:#fff
+  classDef staff fill:#0e7490,stroke:#155e75,color:#fff
+  classDef resident fill:#047857,stroke:#065f46,color:#fff
+
+  class A0,A10 admin
+  class S0,S8 staff
+  class R0,R8 resident</pre>
+    </section>
+    <section class="admin">
+      <h2>Admin — full session (start → end)</h2>
+      <pre class="mermaid">flowchart TB
+  S([START — User opens BRIMS]) --> L1[/login — Login page/]
+  L1 --> L2[Enter email + password]
+  L2 --> L3{Valid input?}
+  L3 -->|No| L2
+  L3 -->|Yes| L4[AuthService.login → Firestore]
+  L4 --> L5{Credentials OK?}
+  L5 -->|No| L2
+  L5 -->|Yes| L6[authGuard + roleGuard → role = Admin]
+  L6 --> L7[/admin/dashboard — Admin dashboard/]
+
+  L7 --> W1[Review stats · recent activity · notifications]
+  W1 --> W2[/admin/requests — Open requests queue/]
+  W2 --> W3[Select request → /admin/requests/:id]
+  W3 --> W4{Pending or For Review?}
+  W4 -->|Yes| W5{Approve or reject?}
+  W5 -->|Approve| W6[Status → Approved · record approver]
+  W5 -->|Reject| W7[Enter reason → Status → Rejected]
+  W6 --> W8[Download certificate PDF/PNG · request QR]
+  W7 --> W9[Request leaves active queue or archive later]
+  W8 --> W9
+  W4 -->|Already final| W9
+
+  W9 --> W10{Archive this request?}
+  W10 -->|Yes| W11[/admin/archives — Tab Requests/]
+  W10 -->|No| W12
+  W11 --> W12
+
+  W12[/admin/residents — Residents list/]
+  W12 --> W13{Add or edit?}
+  W13 -->|Add| W14[/admin/residents/add/]
+  W13 -->|Edit| W15[/admin/residents/:id/]
+  W14 --> W16
+  W15 --> W16{Archive resident?}
+  W16 -->|Yes| W17[/admin/archives — Tab Residents/]
+  W16 -->|No| W18
+  W17 --> W18
+
+  W18[/admin/households — List · map · add · edit/]
+  W18 --> W19{Archive household?}
+  W19 -->|Yes| W20[/admin/archives — Tab Households/]
+  W19 -->|No| W21
+  W20 --> W21
+
+  W21[/admin/users — Users & Roles/]
+  W21 --> W22[Add/edit Admin or Staff · permissions]
+  W22 --> W23{Archive staff account?}
+  W23 -->|Yes| W24[/admin/archives — Tab Users/]
+  W23 -->|No| W25
+  W24 --> W25
+
+  W25[/admin/sms · /admin/email — Broadcasts/]
+  W25 --> W26[/admin/audit-log/]
+  W26 --> W27[/admin/reports — Charts · PDF/]
+  W27 --> W28[/admin/qr-scanner/]
+  W28 --> W29[/admin/settings/]
+  W29 --> W30[/admin/profile/]
+
+  W30 --> X1[Profile menu → Logout]
+  X1 --> X2{Confirm logout?}
+  X2 -->|Cancel| W30
+  X2 -->|Yes| X3[auth.logout — clear session · audit]
+  X3 --> X4[/login/]
+  X4 --> E([END — Session ended])
+
+  classDef startEnd fill:#4338ca,stroke:#312e81,color:#fff
+  class S,E startEnd</pre>
+    </section>
+    <section class="staff">
+      <h2>Staff — full session (start → end)</h2>
+      <pre class="mermaid">flowchart TB
+  S([START — User opens BRIMS]) --> L1[/login — Login page/]
+  L1 --> L2[Enter email + password]
+  L2 --> L3{Valid input?}
+  L3 -->|No| L2
+  L3 -->|Yes| L4[AuthService.login → Firestore]
+  L4 --> L5{Credentials OK?}
+  L5 -->|No| L2
+  L5 -->|Yes| L6[authGuard + roleGuard → role = Staff]
+  L6 --> L7[/staff/dashboard — Staff dashboard/]
+
+  L7 --> W1[Review stats · recent requests · notifications]
+  W1 --> W2[/staff/requests — Requests queue/]
+  W2 --> W3[Select request → /staff/requests/:id]
+  W3 --> W4{Pending or For Review?}
+  W4 -->|Yes| W5{Approve or reject?}
+  W5 -->|Approve| W6[Status → Approved · download cert · QR]
+  W5 -->|Reject| W7[Reason required → Status → Rejected]
+  W6 --> W8
+  W7 --> W8
+  W4 -->|Already final| W8[Back to requests list]
+
+  W8 --> W9[/staff/residents — List · add · profile/]
+  W9 --> W10[/staff/households — List · map · add · edit/]
+  W10 --> W11[/staff/reports — Reports · PDF/]
+  W11 --> W12[/staff/qr-scanner/]
+  W12 --> W13[/staff/settings/]
+  W13 --> W14[/staff/profile/]
+
+  W14 --> X1[Profile menu → Logout]
+  X1 --> X2{Confirm logout?}
+  X2 -->|Cancel| W14
+  X2 -->|Yes| X3[auth.logout — clear session]
+  X3 --> X4[/login/]
+  X4 --> E([END — Session ended])
+
+  classDef startEnd fill:#0e7490,stroke:#155e75,color:#fff
+  class S,E startEnd</pre>
+    </section>
+    <section class="resident">
+      <h2>Resident — full session (start → end)</h2>
+      <pre class="mermaid">flowchart TB
+  S([START — User opens BRIMS]) --> L1[/login — Login page/]
+  L1 --> L2[Enter email + password]
+  L2 --> L3{Valid input?}
+  L3 -->|No| L2
+  L3 -->|Yes| L4[AuthService.login → Firestore]
+  L4 --> L5{Credentials OK?}
+  L5 -->|No| L2
+  L5 -->|Yes| L6[authGuard + roleGuard → role = Resident]
+  L6 --> L7[/resident/dashboard — Resident dashboard/]
+
+  L7 --> W1[View welcome · quick actions · recent requests]
+  W1 --> W2{Need a barangay document?}
+  W2 -->|No| W8
+  W2 -->|Yes| W3[/resident/request-certificate/]
+  W3 --> W4[Choose type · enter purpose]
+  W4 --> W5[Submit → status = Pending]
+  W5 --> W6[/resident/requests — My Requests/]
+  W6 --> W7[/resident/requests/:id — Track status/]
+
+  W7 --> W7a{Staff decision}
+  W7a -->|Approved| W7b[View approved · approver info]
+  W7a -->|Rejected| W7c[View rejection reason]
+  W7a -->|Pending / For Review| W7d[Wait · refresh list]
+  W7b --> W8
+  W7c --> W8
+  W7d --> W8
+
+  W8[/resident/profile/]
+  W8 --> W9[/resident/reports/]
+  W9 --> W10[/resident/settings/]
+  W10 --> W11[Notifications · mark read]
+
+  W11 --> X1[Profile menu → Logout]
+  X1 --> X2{Confirm logout?}
+  X2 -->|Cancel| W10
+  X2 -->|Yes| X3[auth.logout — clear session]
+  X3 --> X4[/login/]
+  X4 --> E([END — Session ended])
+
+  classDef startEnd fill:#047857,stroke:#065f46,color:#fff
+  class S,E startEnd</pre>
+    </section>
+  </main>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose', flowchart: { curve: 'basis', htmlLabels: true } });
+  </script>
+</body>
+</html>

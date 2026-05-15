@@ -18,17 +18,24 @@
     </select>
   </div>
   <div class="table-wrap card households-table-wrap">
-    <app-loading-state
-      [loading]="isLoading"
-      [error]="hasError ? errorMessage : null"
-      [loadingMessage]="'Loading households...'"
-      [errorTitle]="'Error Loading Data'"
-      [showRetry]="true"
-      [retryLabel]="'Try Again'"
-      (retry)="retryLoad()"
-    ></app-loading-state>
-
-    @if (!isLoading && !hasError) {
+    @if (hasError) {
+      <app-loading-state
+        [loading]="false"
+        [error]="errorMessage"
+        [errorTitle]="'Error Loading Data'"
+        [showRetry]="true"
+        [retryLabel]="'Try Again'"
+        (retry)="retryLoad()"
+      ></app-loading-state>
+    } @else if (isLoading) {
+      <app-table-skeleton
+        [rows]="6"
+        [showCheckbox]="canArchiveHouseholds"
+        [columnLabels]="householdTableColumns"
+        [columnWidths]="householdTableColumnWidths"
+        ariaLabel="Loading households"
+      />
+    } @else {
       <table class="table">
         <thead>
           <tr>
@@ -86,17 +93,23 @@
   </div>
 
   <div class="households-mobile-list">
-    <app-loading-state
-      [loading]="isLoading"
-      [error]="hasError ? errorMessage : null"
-      [loadingMessage]="'Loading households...'"
-      [errorTitle]="'Error Loading Data'"
-      [showRetry]="true"
-      [retryLabel]="'Try Again'"
-      (retry)="retryLoad()"
-    ></app-loading-state>
-
-    @if (!isLoading && !hasError) {
+    @if (hasError) {
+      <app-loading-state
+        [loading]="false"
+        [error]="errorMessage"
+        [errorTitle]="'Error Loading Data'"
+        [showRetry]="true"
+        [retryLabel]="'Try Again'"
+        (retry)="retryLoad()"
+      ></app-loading-state>
+    } @else if (isLoading) {
+      <app-card-list-skeleton
+        [count]="4"
+        [fieldsCount]="3"
+        [showCheckbox]="canArchiveHouseholds"
+        ariaLabel="Loading households"
+      />
+    } @else {
       @if (canArchiveHouseholds) {
         <div class="mobile-select-all">
           <input
@@ -171,4 +184,3 @@
     </div>
   }
 </div>
-

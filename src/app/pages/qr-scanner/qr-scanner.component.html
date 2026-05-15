@@ -106,11 +106,7 @@
         @if (scanResultUrl) {
           <p class="scan-result__success">
             This looks like a link:
-            <a
-              [href]="scanResultUrl"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a [href]="scanResultUrl" target="_blank" rel="noopener noreferrer">
               {{ scanResultUrl }}
             </a>
           </p>
@@ -124,8 +120,21 @@
           </a>
         } @else if (scanError) {
           <p class="scan-result__error">{{ scanError }}</p>
+          @if (pendingRoute) {
+            <button
+              type="button"
+              class="btn btn--primary btn--sm"
+              (click)="openPendingRoute()"
+            >
+              Open record in new tab
+            </button>
+          }
+        } @else if (isNavigating) {
+          <p class="scan-result__success">{{ scanResultLabel || 'Opening record…' }}</p>
+        } @else if (scanResultLabel) {
+          <p class="scan-result__success">{{ scanResultLabel }}</p>
         } @else {
-          <p class="scan-result__success">Processing...</p>
+          <p class="scan-result__success">Processing…</p>
         }
       </div>
     </div>

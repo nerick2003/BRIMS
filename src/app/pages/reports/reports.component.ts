@@ -12,6 +12,17 @@ import Swal from 'sweetalert2';
 type ReportPeriod = 'all' | 'last_15_days' | 'this_month' | 'this_semester' | 'this_year';
 type ReportFormat = 'pdf' | 'excel';
 
+interface PdfStatCard {
+  label: string;
+  value: string | number;
+}
+
+interface PdfTableColumn {
+  header: string;
+  width: number;
+  align?: 'left' | 'right' | 'center';
+}
+
 @Component({
   selector: 'app-reports',
   standalone: true,
@@ -25,6 +36,29 @@ export class ReportsComponent implements OnInit, OnDestroy {
   reportFormat: ReportFormat = 'pdf';
 
   private subscriptions = new Subscription();
+
+  private readonly pdfLayout = {
+    marginX: 14,
+    marginTop: 14,
+    marginBottom: 18,
+    pageFooterY: 285,
+    contentBottom: 272,
+  };
+
+  private readonly pdfColors = {
+    primary: [37, 99, 235] as [number, number, number],
+    primaryDark: [30, 64, 175] as [number, number, number],
+    success: [22, 163, 74] as [number, number, number],
+    warning: [217, 119, 6] as [number, number, number],
+    info: [2, 132, 199] as [number, number, number],
+    danger: [220, 38, 38] as [number, number, number],
+    text: [15, 23, 42] as [number, number, number],
+    muted: [100, 116, 139] as [number, number, number],
+    border: [226, 232, 240] as [number, number, number],
+    headerBg: [241, 245, 249] as [number, number, number],
+    rowAlt: [248, 250, 252] as [number, number, number],
+    white: [255, 255, 255] as [number, number, number],
+  };
 
   // Chart data objects are kept as fields so they
   // don't get recreated on every change detection cycle.
@@ -328,6 +362,40 @@ export class ReportsComponent implements OnInit, OnDestroy {
     return isNaN(d.getTime()) ? null : d;
   }
 
+  /** Human-readable date for PDF and on-screen consistency. */
+  private formatDateForExport(value: string | Date | undefined): string {
+    const d =
+      value instanceof Date
+        ? value
+        : this.parseDate(typeof value === 'string' ? value : undefined);
+    if (!d) {
+      return typeof value === 'string' ? value : '';
+    }
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  }
+
+  /**
+   * ISO date prefixed with tab so Excel treats the cell as text (avoids #####).
+   */
+  private formatDateForCsv(value: string | Date | undefined): string {
+    const d =
+      value instanceof Date
+        ? value
+        : this.parseDate(typeof value === 'string' ? value : undefined);
+    if (!d) {
+      const fallback = typeof value === 'string' ? value : '';
+      return fallback ? `\t${fallback}` : '';
+    }
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `\t${y}-${m}-${day}`;
+  }
+
   getRequestsForReports() {
     const all = this.data.getActiveRequests();
     if (this.reportPeriod === 'all') {
@@ -551,6 +619,8 @@ export class ReportsComponent implements OnInit, OnDestroy {
 
   private exportPdf(): void {
     const label = this.getPeriodLabel();
+    const periodLabel = this.getReadablePeriodLabel();
+    const generatedOn = this.formatDateForExport(new Date());
     const residentStats = this.getResidentStats();
     const householdStats = this.getHouseholdStats();
     const demographicPuroks = this.getDemographicPuroks();
@@ -558,215 +628,466 @@ export class ReportsComponent implements OnInit, OnDestroy {
     const requests = this.getRequestsForReports();
 
     const doc = new jsPDF('portrait', 'mm', 'a4');
-    let y = 16;
+    let y = this.pdfDrawCoverHeader(doc, periodLabel, generatedOn);
 
-    // Header
-    doc.setFontSize(14);
-    doc.text('BRIMS Barangay Reports', 14, y);
-    y += 7;
-
-    doc.setFontSize(11);
-    doc.text(`Reporting period: ${this.getReadablePeriodLabel()}`, 14, y);
-    y += 6;
-
-    const generatedOn = new Date();
-    doc.setFontSize(9);
-    doc.text(`Generated on: ${generatedOn.toLocaleDateString()}`, 14, y);
-    y += 10;
-
-    // --- Section 1: Resident Statistics ---
-    doc.setFontSize(12);
-    doc.text('Resident Statistics', 14, y);
-    y += 6;
-
-    doc.setFontSize(10);
-    doc.text(`Total residents: ${residentStats.total}`, 14, y);
-    y += 5;
-    doc.text(`Male: ${residentStats.male}    Female: ${residentStats.female}`, 14, y);
-    y += 5;
-    doc.text(
-      `Minors (<18): ${residentStats.minor}    Adults (18-59): ${residentStats.adult}    Seniors (60+): ${residentStats.senior}`,
-      14,
+    y = this.pdfDrawSection(
+      doc,
       y,
+      'Resident Statistics',
+      'Active residents registered in the barangay',
     );
-    y += 7;
-
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Purok', 14, y);
-    doc.text('Residents', 60, y);
-    doc.text('%', 100, y);
-    y += 5;
-    doc.setFont('helvetica', 'normal');
-
-    this.getResidentPuroks().forEach(p => {
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Purok', 14, y);
-        doc.text('Residents', 60, y);
-        doc.text('%', 100, y);
-        y += 5;
-        doc.setFont('helvetica', 'normal');
-      }
-      doc.text(p.name, 14, y);
-      doc.text(String(p.count), 60, y);
-      doc.text(`${p.percentage}%`, 100, y);
-      y += 5;
-    });
-
-    // --- Section 2: Household Statistics ---
-    if (y > 260) {
-      doc.addPage();
-      y = 20;
-    } else {
-      y += 8;
-    }
-
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Household Statistics', 14, y);
-    y += 6;
-
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Total households: ${householdStats.total}`, 14, y);
-    y += 5;
-    doc.text(`Total members: ${householdStats.totalMembers}`, 14, y);
-    y += 5;
-    doc.text(`Average members/household: ${householdStats.avgMembers}`, 14, y);
-    y += 7;
-
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Purok', 14, y);
-    doc.text('Households', 60, y);
-    doc.text('%', 100, y);
-    y += 5;
-    doc.setFont('helvetica', 'normal');
-
-    this.getHouseholdPuroks().forEach(p => {
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Purok', 14, y);
-        doc.text('Households', 60, y);
-        doc.text('%', 100, y);
-        y += 5;
-        doc.setFont('helvetica', 'normal');
-      }
-      doc.text(p.name, 14, y);
-      doc.text(String(p.count), 60, y);
-      doc.text(`${p.percentage}%`, 100, y);
-      y += 5;
-    });
-
-    // --- Section 3: Demographics Overview ---
-    if (y > 250) {
-      doc.addPage();
-      y = 20;
-    } else {
-      y += 8;
-    }
-
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Demographics Overview', 14, y);
-    y += 6;
-
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Purok', 14, y);
-    doc.text('Residents', 50, y);
-    doc.text('Households', 90, y);
-    doc.text('Avg members/HH', 140, y);
-    y += 5;
-    doc.setFont('helvetica', 'normal');
-
-    demographicPuroks.forEach(p => {
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Purok', 14, y);
-        doc.text('Residents', 50, y);
-        doc.text('Households', 90, y);
-        doc.text('Avg members/HH', 140, y);
-        y += 5;
-        doc.setFont('helvetica', 'normal');
-      }
-      doc.text(p.name, 14, y);
-      doc.text(String(p.residents), 50, y);
-      doc.text(String(p.households), 90, y);
-      doc.text(String(p.avgMembers), 140, y);
-      y += 5;
-    });
-
-    // --- Section 4: Certificate Requests ---
-    doc.addPage();
-    y = 20;
-
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Certificate Requests', 14, y);
-    y += 6;
-
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(
-      `Total: ${requestStats.total}   Approved: ${requestStats.approved}   Pending: ${requestStats.pending}   For Review: ${requestStats.forReview}`,
-      14,
+    y = this.pdfDrawStatCards(doc, y, [
+      { label: 'Total Residents', value: residentStats.total },
+      { label: 'Male', value: residentStats.male },
+      { label: 'Female', value: residentStats.female },
+      { label: 'Seniors (60+)', value: residentStats.senior },
+    ]);
+    y = this.pdfDrawStatCards(doc, y, [
+      { label: 'Minors (<18)', value: residentStats.minor },
+      { label: 'Adults (18-59)', value: residentStats.adult },
+    ], 2);
+    y = this.pdfDrawDataTable(
+      doc,
       y,
+      [
+        { header: 'Purok', width: 90 },
+        { header: 'Residents', width: 40, align: 'right' },
+        { header: 'Share', width: 52, align: 'right' },
+      ],
+      this.getResidentPuroks().map(p => [p.name, String(p.count), `${p.percentage}%`]),
     );
-    y += 8;
 
-    const colX = { date: 14, type: 40, purpose: 90, status: 170 };
-    const rowHeight = 6;
+    y = this.pdfDrawSection(
+      doc,
+      y,
+      'Household Statistics',
+      'Active households and membership summary',
+    );
+    y = this.pdfDrawStatCards(doc, y, [
+      { label: 'Total Households', value: householdStats.total },
+      { label: 'Total Members', value: householdStats.totalMembers },
+      { label: 'Avg Members / HH', value: householdStats.avgMembers },
+    ], 3);
+    y = this.pdfDrawDataTable(
+      doc,
+      y,
+      [
+        { header: 'Purok', width: 90 },
+        { header: 'Households', width: 40, align: 'right' },
+        { header: 'Share', width: 52, align: 'right' },
+      ],
+      this.getHouseholdPuroks().map(p => [p.name, String(p.count), `${p.percentage}%`]),
+    );
 
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Date', colX.date, y);
-    doc.text('Type', colX.type, y);
-    doc.text('Purpose', colX.purpose, y);
-    doc.text('Status', colX.status, y);
-    y += rowHeight;
-    doc.setFont('helvetica', 'normal');
+    y = this.pdfDrawSection(
+      doc,
+      y,
+      'Demographics Overview',
+      'Residents and households combined by purok',
+    );
+    y = this.pdfDrawDataTable(
+      doc,
+      y,
+      [
+        { header: 'Purok', width: 52 },
+        { header: 'Residents', width: 32, align: 'right' },
+        { header: 'Households', width: 36, align: 'right' },
+        { header: 'Avg / HH', width: 62, align: 'right' },
+      ],
+      demographicPuroks.map(p => [
+        p.name,
+        String(p.residents),
+        String(p.households),
+        String(p.avgMembers),
+      ]),
+    );
 
-    requests.forEach(req => {
-      if (y > 280) {
-        doc.addPage();
-        y = 20;
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Date', colX.date, y);
-        doc.text('Type', colX.type, y);
-        doc.text('Purpose', colX.purpose, y);
-        doc.text('Status', colX.status, y);
-        y += rowHeight;
-        doc.setFont('helvetica', 'normal');
-      }
+    y = this.pdfDrawSection(
+      doc,
+      y,
+      'Certificate Requests',
+      'Requests included for the selected reporting period',
+    );
+    y = this.pdfDrawStatCards(doc, y, [
+      { label: 'Total Requests', value: requestStats.total },
+      { label: 'Approved', value: requestStats.approved },
+      { label: 'Pending', value: requestStats.pending },
+      { label: 'For Review', value: requestStats.forReview },
+    ]);
+    this.pdfDrawRequestsTable(doc, y, requests);
 
-      const date = req.date || '';
-      const type = req.type || '';
-      const purpose = req.purpose || '';
-      const status = req.status || '';
-
-      const purposeText = purpose.length > 40 ? `${purpose.slice(0, 37)}...` : purpose;
-
-      doc.text(date, colX.date, y);
-      doc.text(type, colX.type, y);
-      doc.text(purposeText, colX.purpose, y);
-      doc.text(status, colX.status, y);
-
-      y += rowHeight;
-    });
-
+    this.pdfAddFooters(doc, periodLabel);
     doc.save(`BRIMS_reports_${label}.pdf`);
+  }
+
+  private pdfPageWidth(doc: jsPDF): number {
+    return doc.internal.pageSize.getWidth();
+  }
+
+  private pdfPageHeight(doc: jsPDF): number {
+    return doc.internal.pageSize.getHeight();
+  }
+
+  private pdfContentWidth(doc: jsPDF): number {
+    return this.pdfPageWidth(doc) - this.pdfLayout.marginX * 2;
+  }
+
+  private pdfEnsureSpace(
+    doc: jsPDF,
+    y: number,
+    needed: number,
+  ): { y: number; newPage: boolean } {
+    if (y + needed <= this.pdfLayout.contentBottom) {
+      return { y, newPage: false };
+    }
+    doc.addPage();
+    return { y: this.pdfDrawPageBand(doc), newPage: true };
+  }
+
+  private pdfDrawPageBand(doc: jsPDF): number {
+    const w = this.pdfPageWidth(doc);
+    const [r, g, b] = this.pdfColors.primary;
+    doc.setFillColor(r, g, b);
+    doc.rect(0, 0, w, 10, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(255, 255, 255);
+    doc.text('BRIMS Barangay Reports', this.pdfLayout.marginX, 6.5);
+    doc.setTextColor(...this.pdfColors.text);
+    return 16;
+  }
+
+  private pdfDrawCoverHeader(doc: jsPDF, periodLabel: string, generatedOn: string): number {
+    const w = this.pdfPageWidth(doc);
+    const [r, g, b] = this.pdfColors.primary;
+    const [rd, gd, bd] = this.pdfColors.primaryDark;
+
+    doc.setFillColor(rd, gd, bd);
+    doc.rect(0, 0, w, 38, 'F');
+    doc.setFillColor(r, g, b);
+    doc.rect(0, 32, w, 6, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.text('BRIMS', this.pdfLayout.marginX, 16);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('Barangay Information Management System', this.pdfLayout.marginX, 22);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Barangay Reports', this.pdfLayout.marginX, 29);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    const metaX = w - this.pdfLayout.marginX;
+    doc.text('Reporting period', metaX, 14, { align: 'right' });
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(periodLabel, metaX, 19, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('Generated on', metaX, 26, { align: 'right' });
+    doc.text(generatedOn, metaX, 31, { align: 'right' });
+
+    const boxY = 44;
+    const boxH = 14;
+    doc.setDrawColor(...this.pdfColors.border);
+    doc.setFillColor(...this.pdfColors.headerBg);
+    doc.roundedRect(this.pdfLayout.marginX, boxY, this.pdfContentWidth(doc), boxH, 2, 2, 'FD');
+
+    doc.setTextColor(...this.pdfColors.muted);
+    doc.setFontSize(8);
+    doc.text('CONFIDENTIAL · For official barangay use only', this.pdfLayout.marginX + 4, boxY + 5);
+    doc.setTextColor(...this.pdfColors.text);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text(
+      'This document summarizes resident, household, and certificate request data from BRIMS.',
+      this.pdfLayout.marginX + 4,
+      boxY + 10,
+    );
+
+    return boxY + boxH + 8;
+  }
+
+  private pdfDrawSection(doc: jsPDF, y: number, title: string, subtitle?: string): number {
+    y = this.pdfEnsureSpace(doc, y, subtitle ? 22 : 16).y;
+    y += 4;
+
+    const [r, g, b] = this.pdfColors.primary;
+    doc.setFillColor(r, g, b);
+    doc.rect(this.pdfLayout.marginX, y - 2, 3, 8, 'F');
+
+    doc.setTextColor(...this.pdfColors.text);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text(title, this.pdfLayout.marginX + 6, y + 4);
+
+    if (subtitle) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...this.pdfColors.muted);
+      doc.text(subtitle, this.pdfLayout.marginX + 6, y + 10);
+      y += 14;
+    } else {
+      y += 10;
+    }
+
+    return y;
+  }
+
+  private pdfDrawStatCards(
+    doc: jsPDF,
+    y: number,
+    cards: PdfStatCard[],
+    columns = 4,
+  ): number {
+    const gap = 3;
+    const count = Math.min(columns, cards.length);
+    const cardW = (this.pdfContentWidth(doc) - gap * (count - 1)) / count;
+    const cardH = 16;
+    const rows = Math.ceil(cards.length / count);
+    const blockH = rows * cardH + (rows - 1) * gap + 4;
+
+    y = this.pdfEnsureSpace(doc, y, blockH).y;
+
+    cards.forEach((card, index) => {
+      const col = index % count;
+      const row = Math.floor(index / count);
+      const x = this.pdfLayout.marginX + col * (cardW + gap);
+      const cardY = y + row * (cardH + gap);
+
+      doc.setDrawColor(...this.pdfColors.border);
+      doc.setFillColor(...this.pdfColors.white);
+      doc.roundedRect(x, cardY, cardW, cardH, 2, 2, 'FD');
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...this.pdfColors.muted);
+      doc.text(card.label, x + 4, cardY + 6);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.setTextColor(...this.pdfColors.primary);
+      doc.text(String(card.value), x + 4, cardY + 13);
+    });
+
+    return y + blockH;
+  }
+
+  private pdfDrawDataTable(
+    doc: jsPDF,
+    y: number,
+    columns: PdfTableColumn[],
+    rows: string[][],
+  ): number {
+    const rowH = 7;
+    const headerH = 8;
+    const tableW = columns.reduce((sum, col) => sum + col.width, 0);
+    const colXs = columns.reduce<number[]>((acc, col, i) => {
+      acc.push(i === 0 ? this.pdfLayout.marginX : acc[i - 1] + columns[i - 1].width);
+      return acc;
+    }, []);
+
+    const drawHeader = (startY: number): number => {
+      const [r, g, b] = this.pdfColors.primary;
+      doc.setFillColor(r, g, b);
+      doc.rect(this.pdfLayout.marginX, startY, tableW, headerH, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255);
+
+      columns.forEach((col, i) => {
+        const textX =
+          col.align === 'right'
+            ? colXs[i] + col.width - 3
+            : col.align === 'center'
+              ? colXs[i] + col.width / 2
+              : colXs[i] + 3;
+        doc.text(col.header, textX, startY + 5.5, {
+          align: col.align === 'right' ? 'right' : col.align === 'center' ? 'center' : 'left',
+        });
+      });
+
+      return startY + headerH;
+    };
+
+    if (rows.length === 0) {
+      y = this.pdfEnsureSpace(doc, y, headerH + rowH + 4).y;
+      y = drawHeader(y);
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(9);
+      doc.setTextColor(...this.pdfColors.muted);
+      doc.text('No data available for this section.', this.pdfLayout.marginX + 3, y + 5);
+      return y + rowH + 4;
+    }
+
+    y = this.pdfEnsureSpace(doc, y, headerH + rowH + 2).y;
+    y = drawHeader(y);
+
+    rows.forEach((row, rowIndex) => {
+      const space = this.pdfEnsureSpace(doc, y, rowH + 2);
+      y = space.y;
+      if (space.newPage) {
+        y = drawHeader(y);
+      }
+
+      if (rowIndex % 2 === 1) {
+        doc.setFillColor(...this.pdfColors.rowAlt);
+        doc.rect(this.pdfLayout.marginX, y, tableW, rowH, 'F');
+      }
+
+      doc.setDrawColor(...this.pdfColors.border);
+      doc.setLineWidth(0.1);
+      doc.line(this.pdfLayout.marginX, y + rowH, this.pdfLayout.marginX + tableW, y + rowH);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...this.pdfColors.text);
+
+      row.forEach((cell, i) => {
+        const col = columns[i];
+        const textX =
+          col.align === 'right'
+            ? colXs[i] + col.width - 3
+            : col.align === 'center'
+              ? colXs[i] + col.width / 2
+              : colXs[i] + 3;
+        const clipped =
+          cell.length > 42 && col.align !== 'right' ? `${cell.slice(0, 39)}…` : cell;
+        doc.text(clipped, textX, y + 5, {
+          align: col.align === 'right' ? 'right' : col.align === 'center' ? 'center' : 'left',
+        });
+      });
+
+      y += rowH;
+    });
+
+    return y + 4;
+  }
+
+  private pdfDrawStatusBadge(doc: jsPDF, x: number, y: number, status: string): void {
+    const colorMap: Record<string, [number, number, number]> = {
+      Approved: this.pdfColors.success,
+      Pending: this.pdfColors.warning,
+      'For Review': this.pdfColors.info,
+      Rejected: this.pdfColors.danger,
+    };
+    const fill = colorMap[status] ?? this.pdfColors.muted;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    const padX = 2.5;
+    const badgeW = doc.getTextWidth(status) + padX * 2;
+    const badgeH = 4.5;
+
+    doc.setFillColor(...fill);
+    doc.roundedRect(x, y - 3.2, badgeW, badgeH, 1, 1, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.text(status, x + padX, y);
+    doc.setTextColor(...this.pdfColors.text);
+  }
+
+  private pdfDrawRequestsTable(
+    doc: jsPDF,
+    y: number,
+    requests: ReturnType<ReportsComponent['getRequestsForReports']>,
+  ): void {
+    const columns: PdfTableColumn[] = [
+      { header: 'Date', width: 28 },
+      { header: 'Type', width: 44 },
+      { header: 'Purpose', width: 78 },
+      { header: 'Status', width: 32, align: 'center' },
+    ];
+    const tableW = columns.reduce((sum, c) => sum + c.width, 0);
+    const colXs = columns.reduce<number[]>((acc, col, i) => {
+      acc.push(i === 0 ? this.pdfLayout.marginX : acc[i - 1] + columns[i - 1].width);
+      return acc;
+    }, []);
+    const headerH = 8;
+    const baseRowH = 7;
+
+    const drawHeader = (startY: number): number => {
+      doc.setFillColor(...this.pdfColors.primary);
+      doc.rect(this.pdfLayout.marginX, startY, tableW, headerH, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255);
+      columns.forEach((col, i) => {
+        const textX = colXs[i] + (col.align === 'center' ? col.width / 2 : 3);
+        doc.text(col.header, textX, startY + 5.5, {
+          align: col.align === 'center' ? 'center' : 'left',
+        });
+      });
+      return startY + headerH;
+    };
+
+    if (requests.length === 0) {
+      y = this.pdfEnsureSpace(doc, y, headerH + baseRowH + 4).y;
+      drawHeader(y);
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(9);
+      doc.setTextColor(...this.pdfColors.muted);
+      doc.text('No certificate requests for this period.', this.pdfLayout.marginX + 3, y + headerH + 5);
+      return;
+    }
+
+    y = this.pdfEnsureSpace(doc, y, headerH + baseRowH + 2).y;
+    y = drawHeader(y);
+
+    requests.forEach((req, rowIndex) => {
+      const purpose = req.purpose || '—';
+      const purposeLines = doc.splitTextToSize(purpose, columns[2].width - 4);
+      const rowH = Math.max(baseRowH, purposeLines.length * 4.2 + 2.5);
+
+      const space = this.pdfEnsureSpace(doc, y, rowH + 2);
+      y = space.y;
+      if (space.newPage) {
+        y = drawHeader(y);
+      }
+
+      if (rowIndex % 2 === 1) {
+        doc.setFillColor(...this.pdfColors.rowAlt);
+        doc.rect(this.pdfLayout.marginX, y, tableW, rowH, 'F');
+      }
+
+      doc.setDrawColor(...this.pdfColors.border);
+      doc.setLineWidth(0.1);
+      doc.line(this.pdfLayout.marginX, y + rowH, this.pdfLayout.marginX + tableW, y + rowH);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...this.pdfColors.text);
+      doc.text(this.formatDateForExport(req.date), colXs[0] + 3, y + 5);
+      doc.text(req.type || '—', colXs[1] + 3, y + 5);
+      doc.text(purposeLines, colXs[2] + 3, y + 5);
+
+      if (req.status) {
+        this.pdfDrawStatusBadge(doc, colXs[3] + 4, y + 5.2, req.status);
+      }
+
+      y += rowH;
+    });
+  }
+
+  private pdfAddFooters(doc: jsPDF, periodLabel: string): void {
+    const total = doc.getNumberOfPages();
+    const w = this.pdfPageWidth(doc);
+    const h = this.pdfPageHeight(doc);
+
+    for (let page = 1; page <= total; page++) {
+      doc.setPage(page);
+      doc.setDrawColor(...this.pdfColors.border);
+      doc.setLineWidth(0.2);
+      doc.line(this.pdfLayout.marginX, h - 14, w - this.pdfLayout.marginX, h - 14);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...this.pdfColors.muted);
+      doc.text(`BRIMS Barangay Reports · ${periodLabel}`, this.pdfLayout.marginX, h - 9);
+      doc.text(`Page ${page} of ${total}`, w - this.pdfLayout.marginX, h - 9, { align: 'right' });
+    }
   }
 
   private csvRow(...cols: (string | number)[]): string {
@@ -794,7 +1115,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     // Header
     lines.push(this.csvRow('BRIMS Barangay Reports'));
     lines.push(this.csvRow(`Reporting period: ${this.getReadablePeriodLabel()}`));
-    lines.push(this.csvRow(`Generated on: ${new Date().toLocaleDateString()}`));
+    lines.push(this.csvRow(`Generated on: ${this.formatDateForExport(new Date())}`));
     lines.push('');
 
     // Resident statistics
@@ -854,7 +1175,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
     requests.forEach(req => {
       lines.push(
         this.csvRow(
-          req.date || '',
+          this.formatDateForCsv(req.date),
           req.type || '',
           req.purpose || '',
           req.status || '',
@@ -862,7 +1183,7 @@ export class ReportsComponent implements OnInit, OnDestroy {
       );
     });
 
-    const csvContent = lines.join('\r\n');
+    const csvContent = `\uFEFF${lines.join('\r\n')}`;
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

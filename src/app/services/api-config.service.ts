@@ -1,16 +1,12 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
-
-/** Runtime API config. Set by APP_INITIALIZER from assets/config.json if present. */
-export const runtimeApiConfig: { apiBaseUrl: string } = {
-  apiBaseUrl: environment.apiBaseUrl,
-};
+import { runtimeConfig } from '../config/runtime-config';
 
 @Injectable({ providedIn: 'root' })
 export class ApiConfigService {
-  /** Backend base URL for notifications API (from config.json or environment). */
+  /** Backend base URL for notifications API (from config.json or environment fallback). */
   get apiBaseUrl(): string {
-    return runtimeApiConfig.apiBaseUrl || environment.apiBaseUrl;
+    return runtimeConfig.apiBaseUrl || environment.apiBaseUrl;
   }
 
   /** True if the backend URL is still the placeholder (not configured for production). */

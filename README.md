@@ -104,13 +104,24 @@ Shared by both Admin and Staff:
 
 ## Demo Login
 
-> These are example/demo credentials. Adjust or remove in production.
+> Demo accounts live in **Firestore** (not in app source). Seed once before first login.
 
-| Role     | Email                 | Password (any) |
-|----------|-----------------------|----------------|
-| Admin    | `admin@barangay.gov`   | (any)          |
-| Staff    | `staff@barangay.gov`   | (any)          |
-| Resident | `resident@email.com`  | (any)          |
+1. Log in with Firebase CLI (`firebase login`) **or** place a valid `serviceAccountKey.json` in the project root.
+2. Run:
+
+```bash
+npm run seed:firestore
+```
+
+If `serviceAccountKey.json` is expired or revoked, the script automatically uses your `firebase login` session instead.
+
+| Role     | Email                 | Password      |
+|----------|-----------------------|---------------|
+| Admin    | `admin@barangay.gov`   | `admin123`    |
+| Staff    | `staff@barangay.gov`   | `staff123`    |
+| Resident | `resident@email.com`  | `resident123` |
+
+Change these passwords in production (Users & Roles / resident profile). Passwords are stored as **bcrypt hashes** in Firestore (re-run `npm run seed:firestore` to upgrade existing plaintext demo accounts).
 
 ---
 
@@ -255,7 +266,7 @@ backend/
 
 BRIMS is **Firebase integrated** and uses **Firestore** as its primary datastore.
 
-- **Firebase wiring**: `src/app/app.config.ts` initializes Firebase (`environment.firebase`) and provides Firestore.
+- **Firebase wiring**: `src/app/app.config.ts` loads Firebase from `src/assets/config.json` (gitignored) and provides Firestore.
 - **Active database implementation**: the app binds `DATABASE_SERVICE` to `FirebaseDatabaseService` (via `IDatabaseService`), so reads/writes go to Firestore.
 - **Swappable data layer**: the `IDatabaseService` abstraction remains, so you can swap implementations (e.g. JSON Server) if needed.
 
@@ -263,22 +274,37 @@ BRIMS is **Firebase integrated** and uses **Firestore** as its primary datastore
 
 ## Environment Configuration
 
-Environment files already exist under `src/environments/`:
+### Runtime config (`src/assets/config.json`) — required
 
-- **`environment.ts`**: local/dev defaults (includes `apiBaseUrl` and `firebase` config)
-- **`environment.prod.ts`**: production defaults (set `apiBaseUrl` to your deployed backend URL; keep your Firebase config accurate)
+Firebase and backend URLs are **not** stored in `environment.ts` (keeps secrets out of git).
 
-The frontend uses:
-
-- **`environment.firebase`** for Firebase initialization (AngularFire)
-- **`environment.apiBaseUrl`** for the optional SMS/email backend
-
-### Runtime API base URL override (optional)
-If you deploy the Angular app separately from the backend, you can override the backend URL at runtime via `src/assets/config.json`:
+1. Copy the template:
+   ```bash
+   cp src/assets/config.example.json src/assets/config.json
+   ```
+   (`npm install` also creates `config.json` from the example if it is missing.)
+2. Fill in values from [Firebase Console](https://console.firebase.google.com/) → Project settings → Your apps → Web app.
 
 ```json
-{ "apiBaseUrl": "https://your-backend.example.com" }
+{
+  "apiBaseUrl": "https://your-backend.example.com",
+  "firebase": {
+    "apiKey": "...",
+    "authDomain": "...",
+    "projectId": "...",
+    "storageBucket": "...",
+    "messagingSenderId": "...",
+    "appId": "...",
+    "measurementId": "..."
+  }
+}
 ```
+
+`src/assets/config.json` is **gitignored**. For production hosting, deploy a `config.json` alongside your build (under `assets/config.json` in the output) with production values.
+
+### Environment fallbacks
+
+`src/environments/environment.ts` and `environment.prod.ts` only provide fallback `apiBaseUrl` values if `config.json` fails to load.
 
 ---
 

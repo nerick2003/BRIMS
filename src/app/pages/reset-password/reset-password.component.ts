@@ -37,7 +37,7 @@ export class ResetPasswordComponent implements OnInit {
     });
   }
 
-  onSubmit() {
+  async onSubmit() {
     if (!this.password || !this.confirmPassword) {
       this.error = 'Please fill in all fields.';
       return;
@@ -56,11 +56,8 @@ export class ResetPasswordComponent implements OnInit {
     this.error = '';
     this.loading = true;
 
-    // Simulate API call
-    setTimeout(() => {
-      const result = this.auth.resetPassword(this.token, this.email, this.password);
-      this.loading = false;
-      
+    try {
+      const result = await this.auth.resetPassword(this.token, this.email, this.password);
       if (result.success) {
         this.success = true;
         setTimeout(() => {
@@ -69,7 +66,9 @@ export class ResetPasswordComponent implements OnInit {
       } else {
         this.error = result.message || 'Failed to reset password. Please try again.';
       }
-    }, 1000);
+    } finally {
+      this.loading = false;
+    }
   }
 
   backToLogin() {

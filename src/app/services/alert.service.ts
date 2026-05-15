@@ -11,12 +11,14 @@ export class AlertService {
     });
   }
 
-  /** Success message without OK button; closes automatically after timerMs (default 1000). */
+  /** Side toast (top-right); no OK button; closes after timerMs (default 1000). */
   successToast(title: string, text?: string, timerMs: number = 1000) {
     return Swal.fire({
       icon: 'success',
       title,
       text,
+      toast: true,
+      position: 'top-end',
       showConfirmButton: false,
       timer: timerMs,
       timerProgressBar: true,

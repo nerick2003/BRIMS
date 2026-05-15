@@ -3,3 +3,5 @@ node_modules
 serviceAccountKey.json
 .cursor/rules/
 docs/
+backend/.env
+src/assets/config.json

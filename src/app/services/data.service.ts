@@ -5,6 +5,7 @@ import { AuditLogService } from './audit-log.service';
 import { NotificationService } from './notification.service';
 import { FirestorePortalNotificationsService } from './firestore-portal-notifications.service';
 import { ErrorHandlerService } from './error-handler.service';
+import { PasswordService } from './password.service';
 
 export interface Resident {
   id: string;
@@ -21,7 +22,8 @@ export interface Resident {
   nationality?: string;
   contact?: string;
   email?: string;
-  password?: string;  // for resident portal login (store hashed in production)
+  /** Bcrypt hash for resident portal login (never store plaintext). */
+  password?: string;
   address?: string;
   /** Profile picture (data URL) – visible to staff viewing this resident */
   profilePicture?: string;
@@ -108,7 +110,7 @@ export interface SystemUser {
   status: 'Active' | 'Inactive';
   lastLogin?: string;
   createdAt: string;
-  /** For Staff/Admin: used for login. Store hashed in production. */
+  /** Bcrypt hash for Staff/Admin login (never store plaintext). */
   password?: string;
   /** Profile picture (data URL) – visible to others who can see this user */
   profilePicture?: string;
@@ -149,6 +151,7 @@ export class DataService {
   private notificationService = inject(NotificationService);
   private portalNotifications = inject(FirestorePortalNotificationsService);
   private errorHandler = inject(ErrorHandlerService);
+  private passwordService = inject(PasswordService);
 
   constructor(
     @Inject(DATABASE_SERVICE) private database: IDatabaseService,
@@ -272,7 +275,28 @@ export class DataService {
     return this.residents.filter(r => !!r.archived);
   }
 
+  private withHashedPassword<T extends { password?: string }>(entity: T): T {
+    if (!entity.password) {
+      return entity;
+    }
+    return {
+      ...entity,
+      password: this.passwordService.hashForStorage(entity.password),
+    };
+  }
+
+  private withHashedPasswordUpdates<T extends { password?: string }>(updates: Partial<T>): Partial<T> {
+    if (!updates.password) {
+      return updates;
+    }
+    return {
+      ...updates,
+      password: this.passwordService.hashForStorage(updates.password),
+    };
+  }
+
   addResident(resident: Resident): void {
+    resident = this.withHashedPassword(resident);
     if (this.isDuplicateResident(resident)) {
       this.errorHandler.handleErrorWithContext(
         new Error(`Duplicate resident detected: ${resident.name}`),
@@ -318,7 +342,9 @@ export class DataService {
   updateResident(id: string, updates: Partial<Resident>): void {
     const resident = this.residents.find((r) => r.id === id);
     if (!resident) return;
-    
+
+    updates = this.withHashedPasswordUpdates(updates);
+
     this.audit.log({
       action: 'Update resident',
       category: 'resident',
@@ -742,6 +768,7 @@ export class DataService {
   }
 
   addUser(user: SystemUser): void {
+    user = this.withHashedPassword(user);
     this.users.push(user);
     this.audit.log({
       action: 'Add user',
@@ -878,6 +905,8 @@ export class DataService {
   updateUser(userId: string, updates: Partial<SystemUser>): void {
     const user = this.users.find(u => u.id === userId);
     if (!user) return;
+
+    updates = this.withHashedPasswordUpdates(updates);
     const originalUser: SystemUser = { ...user };
     Object.assign(user, updates);
     this.users$.next(this.users);

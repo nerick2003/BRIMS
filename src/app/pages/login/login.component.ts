@@ -76,7 +76,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
     return null;
   }
 
-  onSubmit() {
+  async onSubmit() {
     this.error = '';
     const validationError = this.validate();
     if (validationError) {
@@ -85,7 +85,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     this.loading = true;
-    const r = this.auth.login(this.email.trim(), this.password);
+    const r = await this.auth.login(this.email.trim(), this.password);
     if (r.success) {
       try {
         if (this.rememberMe) {

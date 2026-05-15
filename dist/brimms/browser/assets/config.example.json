@@ -1,0 +1,13 @@
+{
+  "apiBaseUrl": "http://localhost:4000",
+  "firebase": {
+    "apiKey": "YOUR_FIREBASE_API_KEY",
+    "authDomain": "your-project.firebaseapp.com",
+    "projectId": "your-project-id",
+    "storageBucket": "your-project.firebasestorage.app",
+    "messagingSenderId": "000000000000",
+    "appId": "1:000000000000:web:xxxxxxxxxxxxxxxx",
+    "measurementId": "G-XXXXXXXXXX"
+  },
+  "_hint": "Copy this file to config.json (same folder) and paste values from Firebase Console → Project settings → Your apps → Web app. config.json is gitignored."
+}

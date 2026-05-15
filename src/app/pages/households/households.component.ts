@@ -6,12 +6,21 @@ import { DataService, Household } from '../../services/data.service';
 import { AuthService } from '../../services/auth.service';
 import { Subscription } from 'rxjs';
 import { LoadingStateComponent } from '../../shared/loading-state.component';
+import { TableSkeletonComponent } from '../../shared/skeleton/table-skeleton.component';
+import { CardListSkeletonComponent } from '../../shared/skeleton/card-list-skeleton.component';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-households',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, LoadingStateComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    LoadingStateComponent,
+    TableSkeletonComponent,
+    CardListSkeletonComponent,
+  ],
   templateUrl: './households.component.html',
   styleUrls: ['./households.component.scss'],
 })
@@ -123,6 +132,17 @@ export class HouseholdsComponent implements OnInit, OnDestroy {
   get canArchiveHouseholds(): boolean {
     return this.auth.currentUser?.role === 'admin';
   }
+
+  readonly householdTableColumns = [
+    'Household ID',
+    'Head of Household',
+    'Address',
+    'Purok',
+    'Members',
+    'Actions',
+  ];
+
+  readonly householdTableColumnWidths = ['6.5rem', '7.5rem', '12rem', '4.5rem', '4.5rem', '3.5rem'];
 
   get showBulkActionsBar(): boolean {
     if (!this.canArchiveHouseholds) return false;

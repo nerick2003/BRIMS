@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { DataService } from './data.service';
 import { AuditLogService } from './audit-log.service';
+import { PasswordService } from './password.service';
 
 export type UserRole = 'admin' | 'staff' | 'resident';
 
@@ -24,6 +25,7 @@ export class AuthService {
   constructor(
     private data: DataService,
     private audit: AuditLogService,
+    private passwordService: PasswordService,
   ) {
     const raw = localStorage.getItem(this.STORAGE_KEY);
     if (raw) {
@@ -136,15 +138,15 @@ export class AuthService {
     return us?.profilePicture ?? null;
   }
 
-  login(email: string, password: string): { success: boolean; role?: UserRole } {
+  async login(email: string, password: string): Promise<{ success: boolean; role?: UserRole }> {
     const normalizedEmail = email?.trim().toLowerCase() ?? '';
     const pwd = password ?? '';
 
-    // 1. Check residents created by admin (email + password from Add Resident)
     const resident = this.data.residents.find(
-      (r) => r.email?.trim().toLowerCase() === normalizedEmail
+      (r) => r.email?.trim().toLowerCase() === normalizedEmail,
     );
-    if (resident?.password === pwd) {
+    if (resident?.password && (await this.passwordService.verify(pwd, resident.password))) {
+      await this.upgradeStoredPasswordIfLegacy('resident', resident.id, pwd, resident.password);
       const user: User = {
         id: resident.id,
         name: resident.name,
@@ -165,14 +167,17 @@ export class AuthService {
       return { success: true, role: 'resident' };
     }
 
-    // 2. Check staff/admin users created in Users & Roles (email + password)
     const staffOrAdmin = this.data.users.find(
       (u) =>
         u.email?.trim().toLowerCase() === normalizedEmail &&
         (u.role === 'Staff' || u.role === 'Admin') &&
-        u.status === 'Active'
+        u.status === 'Active',
     );
-    if (staffOrAdmin && staffOrAdmin.password === pwd) {
+    if (
+      staffOrAdmin?.password &&
+      (await this.passwordService.verify(pwd, staffOrAdmin.password))
+    ) {
+      await this.upgradeStoredPasswordIfLegacy('staff', staffOrAdmin.id, pwd, staffOrAdmin.password);
       const role: UserRole = staffOrAdmin.role === 'Admin' ? 'admin' : 'staff';
       const user: User = {
         id: staffOrAdmin.id,
@@ -194,59 +199,66 @@ export class AuthService {
       return { success: true, role };
     }
 
-    // 3. Fallback: demo accounts with fixed default passwords
-    if (normalizedEmail === 'staff@barangay.gov' && pwd === 'staff123') {
-      const user: User = { id: '1', name: 'Staff User', email: normalizedEmail, role: 'staff' };
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
-      this.setStoredResidentBarangayId(null);
-      this.currentProfilePicture$.next(this.getStoredProfilePicture(user.id));
-      this.audit.log({
-        action: 'Login',
-        category: 'auth',
-        userId: user.id,
-        userName: user.name,
-        userEmail: user.email,
-        details: 'Demo staff logged in',
-      });
-      return { success: true, role: 'staff' };
+    return { success: false };
+  }
+
+  /**
+   * Re-hash legacy plaintext passwords in Firestore after a successful login.
+   */
+  private async upgradeStoredPasswordIfLegacy(
+    accountType: 'resident' | 'staff',
+    id: string,
+    plainPassword: string,
+    storedPassword: string,
+  ): Promise<void> {
+    if (this.passwordService.isHashed(storedPassword)) {
+      return;
     }
-    if (normalizedEmail === 'admin@barangay.gov' && pwd === 'admin123') {
-      const user: User = { id: '4', name: 'Admin User', email: normalizedEmail, role: 'admin' };
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
-      this.setStoredResidentBarangayId(null);
-      this.currentProfilePicture$.next(this.getStoredProfilePicture(user.id));
-      this.audit.log({
-        action: 'Login',
-        category: 'auth',
-        userId: user.id,
-        userName: user.name,
-        userEmail: user.email,
-        details: 'Demo admin logged in',
-      });
-      return { success: true, role: 'admin' };
+    const hashed = await this.passwordService.hash(plainPassword);
+    if (accountType === 'resident') {
+      this.data.updateResident(id, { password: hashed });
+    } else {
+      this.data.updateUser(id, { password: hashed });
     }
-    if (normalizedEmail === 'resident@email.com' && pwd === 'resident123') {
-      const user: User = { id: '1', name: 'Juan Dela Cruz', email: normalizedEmail, role: 'resident' };
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
-      const demoRid =
-        this.data.getResidentById('1')?.residentId?.trim()
-        ?? this.data.residents.find(r => r.email?.trim().toLowerCase() === normalizedEmail)?.residentId
-          ?.trim()
-        ?? 'BRGY-1001';
-      this.setStoredResidentBarangayId(demoRid);
-      this.currentProfilePicture$.next(this.getStoredProfilePicture(user.id));
-      this.audit.log({
-        action: 'Login',
-        category: 'auth',
-        userId: user.id,
-        userName: user.name,
-        userEmail: user.email,
-        details: 'Demo resident logged in',
-      });
-      return { success: true, role: 'resident' };
+  }
+
+  /** Change password for the currently logged-in user. */
+  async changePassword(
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ success: boolean; message?: string }> {
+    const user = this.currentUser;
+    if (!user) {
+      return { success: false, message: 'You are not signed in.' };
     }
 
-    return { success: false };
+    if (newPassword.length < 8) {
+      return { success: false, message: 'Password must be at least 8 characters long.' };
+    }
+
+    if (user.role === 'resident') {
+      const resident = this.data.residents.find((r) => r.id === user.id);
+      if (!resident?.password) {
+        return { success: false, message: 'Account password not found.' };
+      }
+      if (!(await this.passwordService.verify(currentPassword, resident.password))) {
+        return { success: false, message: 'Current password is incorrect.' };
+      }
+      const hashed = await this.passwordService.hash(newPassword);
+      this.data.updateResident(user.id, { password: hashed });
+      return { success: true };
+    }
+
+    const systemUser = this.data.users.find((u) => u.id === user.id);
+    if (!systemUser?.password) {
+      return { success: false, message: 'Account password not found.' };
+    }
+    if (!(await this.passwordService.verify(currentPassword, systemUser.password))) {
+      return { success: false, message: 'Current password is incorrect.' };
+    }
+    const hashed = await this.passwordService.hash(newPassword);
+    this.data.updateUser(user.id, { password: hashed });
+    return { success: true };
   }
 
   logout(): void {
@@ -410,38 +422,73 @@ export class AuthService {
     return { success: true, resetLink };
   }
 
-  resetPassword(token: string, email: string, newPassword: string): { success: boolean; message?: string } {
+  async resetPassword(
+    token: string,
+    email: string,
+    newPassword: string,
+  ): Promise<{ success: boolean; message?: string }> {
     const normalizedEmail = email?.trim().toLowerCase() ?? '';
     const storageKey = `reset_token_${normalizedEmail}`;
 
-    // Retrieve reset token from storage
     const resetDataStr = sessionStorage.getItem(storageKey);
-
     if (!resetDataStr) {
       return { success: false, message: 'Invalid or expired reset token.' };
     }
 
-    const resetData = JSON.parse(resetDataStr);
+    const resetData = JSON.parse(resetDataStr) as { token: string; expiresAt: number };
 
-    // Check if token matches
     if (resetData.token !== token) {
       return { success: false, message: 'Invalid reset token.' };
     }
 
-    // Check if token has expired
     if (Date.now() > resetData.expiresAt) {
       sessionStorage.removeItem(storageKey);
       return { success: false, message: 'Reset token has expired. Please request a new one.' };
     }
 
-    // In a real app, update password in database
-    // For demo: just remove the reset token
-    sessionStorage.removeItem(storageKey);
-    
-    // Log password reset (in production, update database)
-    console.log(`Password reset for ${email} completed successfully.`);
-    
-    return { success: true };
+    if (newPassword.length < 8) {
+      return { success: false, message: 'Password must be at least 8 characters long.' };
+    }
+
+    const hashed = await this.passwordService.hash(newPassword);
+    const resident = this.data.residents.find(
+      (r) => r.email?.trim().toLowerCase() === normalizedEmail,
+    );
+    if (resident) {
+      this.data.updateResident(resident.id, { password: hashed });
+      sessionStorage.removeItem(storageKey);
+      this.audit.log({
+        action: 'Password reset',
+        category: 'auth',
+        userId: resident.id,
+        userName: resident.name,
+        userEmail: normalizedEmail,
+        details: 'Resident password reset via email link',
+      });
+      return { success: true };
+    }
+
+    const staffOrAdmin = this.data.users.find(
+      (u) =>
+        u.email?.trim().toLowerCase() === normalizedEmail &&
+        (u.role === 'Staff' || u.role === 'Admin') &&
+        u.status === 'Active',
+    );
+    if (staffOrAdmin) {
+      this.data.updateUser(staffOrAdmin.id, { password: hashed });
+      sessionStorage.removeItem(storageKey);
+      this.audit.log({
+        action: 'Password reset',
+        category: 'auth',
+        userId: staffOrAdmin.id,
+        userName: staffOrAdmin.name,
+        userEmail: normalizedEmail,
+        details: `${staffOrAdmin.role} password reset via email link`,
+      });
+      return { success: true };
+    }
+
+    return { success: false, message: 'Account not found.' };
   }
 
   private generateResetToken(): string {

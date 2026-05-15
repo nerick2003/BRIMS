@@ -5,6 +5,12 @@ import { ZXingScannerModule } from '@zxing/ngx-scanner';
 import { BarcodeFormat, Result } from '@zxing/library';
 import { DataService } from '../../services/data.service';
 
+interface ParsedQrPayload {
+  type?: string;
+  id?: string;
+  residentId?: string;
+}
+
 @Component({
   selector: 'app-qr-scanner',
   standalone: true,
@@ -20,9 +26,15 @@ export class QrScannerComponent implements OnInit, OnDestroy {
   scanResult: string | null = null;
   scanResultUrl: string | null = null;
   scanError: string | null = null;
+  scanResultLabel: string | null = null;
+  isNavigating = false;
+  pendingRoute: (string | number)[] | null = null;
   allowedFormats = [BarcodeFormat.QR_CODE];
   torchEnabled = false;
   torchAvailable = false;
+  /** Prevents duplicate scanSuccess events from processing the same code repeatedly. */
+  private scanLocked = false;
+  private lastScannedCode: string | null = null;
 
   constructor(
     private router: Router,
@@ -53,8 +65,8 @@ export class QrScannerComponent implements OnInit, OnDestroy {
         this.scannerEnabled = true;
         this.scanError = null;
         return;
-      } catch (error: any) {
-        const errorName = error?.name || '';
+      } catch (error: unknown) {
+        const errorName = (error as { name?: string })?.name || '';
         if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
           this.hasPermission = false;
           this.scanError = 'Camera permission denied. Please enable camera access in your browser settings.';
@@ -89,17 +101,30 @@ export class QrScannerComponent implements OnInit, OnDestroy {
   }
 
   onScanSuccess(result: Result | string): void {
-    // Handle both Result object and string
     const text = typeof result === 'string' ? result : result.getText();
-    this.scanResult = text;
-    this.scanError = null;
-    if (this.scanResult) {
-      this.processScannedCode(this.scanResult);
+    const trimmed = text?.trim();
+    if (!trimmed) {
+      return;
     }
+
+    // ZXing fires scanSuccess continuously while the code is in frame.
+    if (this.scanLocked) {
+      if (trimmed === this.lastScannedCode) {
+        return;
+      }
+    }
+
+    this.scanLocked = true;
+    this.lastScannedCode = trimmed;
+    this.scannerEnabled = false;
+    this.scanResult = trimmed;
+    this.scanError = null;
+    this.scanResultLabel = null;
+    this.pendingRoute = null;
+    this.processScannedCode(trimmed);
   }
 
-  onScanError(error: any): void {
-    // Only show error if it's not a permission issue (already handled)
+  onScanError(_error?: unknown): void {
     if (this.hasPermission && !this.scanError) {
       this.scanError = 'An error occurred while scanning. Please try again.';
     }
@@ -113,84 +138,129 @@ export class QrScannerComponent implements OnInit, OnDestroy {
     this.torchEnabled = !this.torchEnabled;
   }
 
-  private openRouteInNewTab(commands: any[]): void {
-    if (typeof window === 'undefined') {
-      this.router.navigate(commands);
+  openPendingRoute(): void {
+    if (!this.pendingRoute) {
       return;
+    }
+    this.openRouteInNewTab(this.pendingRoute);
+  }
+
+  private getRouteBase(): string {
+    return this.router.url.startsWith('/admin') ? '/admin' : '/staff';
+  }
+
+  private parseQrPayload(code: string): ParsedQrPayload | null {
+    const normalized = code.replace(/^\uFEFF/, '').trim();
+    try {
+      const parsed = JSON.parse(normalized) as ParsedQrPayload;
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private openRouteInNewTab(commands: (string | number)[]): boolean {
+    this.isNavigating = true;
+    this.pendingRoute = null;
+    this.scanError = null;
+
+    if (typeof window === 'undefined') {
+      void this.router.navigate(commands);
+      this.isNavigating = false;
+      this.scanResultLabel = 'Record opened.';
+      return true;
     }
 
     const urlTree = this.router.createUrlTree(commands);
-    const url = this.router.serializeUrl(urlTree);
-    window.open(url, '_blank');
+    const path = this.router.serializeUrl(urlTree);
+    const absoluteUrl = `${window.location.origin}${path}`;
+    const newTab = window.open(absoluteUrl, '_blank', 'noopener,noreferrer');
+
+    this.isNavigating = false;
+
+    if (!newTab) {
+      this.scanError = 'Could not open a new tab. Allow pop-ups for this site, or use the button below.';
+      this.pendingRoute = commands;
+      return false;
+    }
+
+    this.scanResultLabel = 'Opened in a new tab. You can scan another code here.';
+    return true;
+  }
+
+  private openExternalUrlInNewTab(url: string): boolean {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    const newTab = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!newTab) {
+      this.scanError = 'Could not open a new tab. Allow pop-ups or use Open link below.';
+      return false;
+    }
+
+    this.scanResultLabel = 'Opened in a new tab.';
+    return true;
+  }
+
+  private openResident(base: string, residentKey: string): void {
+    const resident =
+      this.data.getResidentById(residentKey) ||
+      this.data.getResidentByResidentId(residentKey);
+    const routeId = resident?.id ?? residentKey;
+    this.scanResultLabel = resident
+      ? `Opening profile for ${resident.name} in a new tab…`
+      : 'Opening resident profile in a new tab…';
+    this.openRouteInNewTab([base, 'residents', routeId]);
+  }
+
+  private openRequest(base: string, requestId: string): void {
+    const normalizedId = requestId.replace(/^(REQ-|req-)/i, '');
+    const request = this.data.getRequestById(normalizedId);
+    const routeId = request?.id ?? normalizedId;
+    this.scanResultLabel = request
+      ? `Opening request ${request.id} in a new tab…`
+      : 'Opening request in a new tab…';
+    this.openRouteInNewTab([base, 'requests', routeId]);
   }
 
   processScannedCode(code: string): void {
     try {
       this.scanResultUrl = null;
+      const parsed = this.parseQrPayload(code);
+      const base = this.getRouteBase();
 
-      // Try to parse as JSON first (for structured QR codes)
-      let parsed: any;
-      try {
-        parsed = JSON.parse(code);
-      } catch {
-        parsed = null;
+      if (parsed?.type === 'resident') {
+        const residentKey = parsed.id || parsed.residentId;
+        if (residentKey) {
+          this.openResident(base, String(residentKey));
+        } else {
+          this.scanError = 'Invalid resident QR code (missing ID).';
+        }
+        return;
       }
 
-      const isAdminPath = this.router.url.startsWith('/admin');
-      const base = isAdminPath ? '/admin' : '/staff';
-
-      if (parsed) {
-        // Handle structured QR codes
-        if (parsed.type === 'resident') {
-          const residentKey: string | undefined = parsed.id || parsed.residentId;
-          if (residentKey) {
-            const resident =
-              this.data.getResidentById(residentKey) ||
-              this.data.getResidentByResidentId(residentKey);
-
-            if (resident) {
-              this.openRouteInNewTab([base, 'residents', resident.id]);
-            } else {
-              this.scanError = `Resident not found for ID "${residentKey}"`;
-            }
-            return;
-          }
-        }
-
-        if (parsed.type === 'request' && parsed.id) {
-          const request = this.data.getRequestById(parsed.id);
-          if (request) {
-            this.openRouteInNewTab([base, 'requests', request.id]);
-          } else {
-            this.scanError = `Request not found for ID "${parsed.id}"`;
-          }
-          return;
-        }
-
-        if (parsed.type === 'certificate' && parsed.id) {
-          // Certificates currently reuse request IDs
-          const request = this.data.getRequestById(parsed.id);
-          if (request) {
-            this.openRouteInNewTab([base, 'requests', request.id]);
-          } else {
-            this.scanError = `Certificate not found for ID "${parsed.id}"`;
-          }
-          return;
-        }
+      if (parsed?.type === 'request' && parsed.id) {
+        this.openRequest(base, String(parsed.id));
+        return;
       }
 
-      // Handle simple resident identifiers or URL-like codes
+      if (parsed?.type === 'certificate' && parsed.id) {
+        this.openRequest(base, String(parsed.id));
+        return;
+      }
+
+      if (parsed?.type) {
+        this.scanError = `Unsupported QR code type: ${parsed.type}`;
+        return;
+      }
+
       const trimmedCode = code.trim();
 
-      // Try to interpret the scanned code as a URL
       let urlToOpen: string | null = null;
-
-      // Already a full http/https URL
       if (/^https?:\/\/\S+/i.test(trimmedCode)) {
         urlToOpen = trimmedCode;
-      }
-      // Starts with www. or looks like a domain (e.g. example.com/path)
-      else if (
+      } else if (
         /^www\.\S+/i.test(trimmedCode) ||
         /^[a-z0-9.-]+\.[a-z]{2,}(\S*)?$/i.test(trimmedCode)
       ) {
@@ -199,50 +269,47 @@ export class QrScannerComponent implements OnInit, OnDestroy {
 
       if (urlToOpen) {
         this.scanResultUrl = urlToOpen;
-        if (typeof window !== 'undefined') {
-          try {
-            window.open(urlToOpen, '_blank');
-          } catch {
-            // If the browser blocks the popup, the user can still click the link in the UI.
-          }
-        }
+        this.openExternalUrlInNewTab(urlToOpen);
+        return;
+      }
+
+      if (/^(REQ-|req-)/i.test(trimmedCode)) {
+        this.openRequest(base, trimmedCode);
         return;
       }
 
       const residentFromId =
-        this.data.getResidentById(code) || this.data.getResidentByResidentId(code);
+        this.data.getResidentById(trimmedCode) || this.data.getResidentByResidentId(trimmedCode);
       if (residentFromId) {
-        this.openRouteInNewTab([base, 'residents', residentFromId.id]);
+        this.openResident(base, residentFromId.id);
         return;
       }
 
-      // Check if it's a request ID format
-      if (code.startsWith('REQ-') || code.startsWith('req-')) {
-        const requestId = code.replace(/^(REQ-|req-)/i, '');
-        const request = this.data.getRequestById(requestId);
-        if (request) {
-          this.openRouteInNewTab([base, 'requests', request.id]);
-        } else {
-          this.scanError = `Request not found for ID "${requestId}"`;
-        }
+      // Resident ID from QR when data is still loading (detail page resolves once data arrives).
+      if (/^[a-z0-9_-]+$/i.test(trimmedCode)) {
+        this.openResident(base, trimmedCode);
         return;
       }
 
-      // If no pattern matches, show the raw code
       this.scanError = `Unrecognized QR code format: ${code}`;
-    } catch (error) {
+    } catch {
       this.scanError = 'Error processing QR code. Please try scanning again.';
     }
   }
 
   resetScanner(): void {
+    this.scanLocked = false;
+    this.lastScannedCode = null;
     this.scanResult = null;
     this.scanResultUrl = null;
     this.scanError = null;
+    this.scanResultLabel = null;
+    this.isNavigating = false;
+    this.pendingRoute = null;
     this.scannerEnabled = true;
   }
 
   retryPermission(): void {
-    this.requestCameraPermission();
+    void this.requestCameraPermission();
   }
 }

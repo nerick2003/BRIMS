@@ -7,7 +7,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "api": "json-server --watch server/db.json --port 3000",
-    "seed:firestore": "node scripts/seed-firestore.js"
+    "seed:firestore": "node scripts/seed-firestore.js",
+    "postinstall": "node scripts/ensure-config.js"
   },
   "private": true,
   "dependencies": {
@@ -24,6 +25,7 @@
     "@zxing/browser": "^0.1.4",
     "@zxing/library": "^0.21.0",
     "@zxing/ngx-scanner": "^21.0.0",
+    "bcryptjs": "^3.0.3",
     "chart.js": "^4.4.0",
     "firebase": "^12.10.0",
     "firebase-admin": "^13.7.0",
@@ -42,6 +44,7 @@
     "@angular-devkit/build-angular": "^21.2.4",
     "@angular/cli": "^21.2.4",
     "@angular/compiler-cli": "^21.2.6",
+    "@types/bcryptjs": "^2.4.6",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^22.10.2",
     "@types/three": "^0.183.1",

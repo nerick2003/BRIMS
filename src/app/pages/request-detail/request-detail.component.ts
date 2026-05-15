@@ -1,4 +1,5 @@
-import { Component, OnInit, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef, ViewChild } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DataService, CertificateRequest, Resident } from '../../services/data.service';
@@ -13,7 +14,7 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './request-detail.component.html',
   styleUrls: ['./request-detail.component.scss'],
 })
-export class RequestDetailComponent implements OnInit {
+export class RequestDetailComponent implements OnInit, OnDestroy {
   readonly rejectReasonMaxLength = 300;
   request: CertificateRequest | undefined;
   requester: Resident | undefined;
@@ -26,6 +27,9 @@ export class RequestDetailComponent implements OnInit {
   backRoute: string[] = ['..'];
   backText = 'Back to Requests';
 
+  private routeRequestId: string | null = null;
+  private requestsSub?: Subscription;
+
   @ViewChild('certificateRef') certificateRef?: ElementRef<HTMLDivElement>;
 
   constructor(
@@ -35,16 +39,7 @@ export class RequestDetailComponent implements OnInit {
     private qrCodeService: QrCodeService,
     private certificateGenerator: CertificateGeneratorService,
     private auth: AuthService,
-  ) {
-    // Initialize on first load
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.request = this.data.getRequestById(id);
-      if (this.request) {
-        this.loadRequester();
-      }
-    }
-  }
+  ) {}
 
   ngOnInit() {
     this.route.queryParamMap.subscribe(queryParams => {
@@ -66,23 +61,38 @@ export class RequestDetailComponent implements OnInit {
       this.backText = 'Back to Requests';
     });
 
-    // Handle route changes
     this.route.paramMap.subscribe(params => {
-      const id = params.get('id');
-      if (id) {
-        this.request = this.data.getRequestById(id);
-        if (this.request) {
-          this.loadRequester();
-          this.generateQRCode();
-        } else {
-          this.requester = undefined;
-        }
-      } else {
-        this.request = undefined;
-        this.requester = undefined;
-        this.qrCodeDataUrl = null;
-      }
+      this.routeRequestId = params.get('id');
+      this.loadRequestFromData();
     });
+
+    this.requestsSub = this.data.requestsObservable.subscribe(() => {
+      this.loadRequestFromData();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.requestsSub?.unsubscribe();
+  }
+
+  private loadRequestFromData(): void {
+    const id = this.routeRequestId;
+    if (!id) {
+      this.request = undefined;
+      this.requester = undefined;
+      this.qrCodeDataUrl = null;
+      return;
+    }
+
+    this.request = this.data.getRequestById(id);
+    if (this.request) {
+      this.loadRequester();
+      this.generateQRCode();
+      return;
+    }
+
+    this.requester = undefined;
+    this.qrCodeDataUrl = null;
   }
 
   generateQRCode(): void {

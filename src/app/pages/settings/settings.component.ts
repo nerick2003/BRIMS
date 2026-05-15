@@ -88,7 +88,7 @@ export class SettingsComponent {
     }, 3000);
   }
 
-  saveAccountSettings(): void {
+  async saveAccountSettings(): Promise<void> {
     if (this.accountSettings.newPassword && this.accountSettings.newPassword !== this.accountSettings.confirmPassword) {
       this.error = 'New passwords do not match.';
       return;
@@ -99,13 +99,27 @@ export class SettingsComponent {
       return;
     }
 
-    // Simulate save
+    if (this.accountSettings.newPassword) {
+      if (!this.accountSettings.currentPassword?.trim()) {
+        this.error = 'Enter your current password to set a new one.';
+        return;
+      }
+      const result = await this.auth.changePassword(
+        this.accountSettings.currentPassword,
+        this.accountSettings.newPassword,
+      );
+      if (!result.success) {
+        this.error = result.message || 'Failed to update password.';
+        return;
+      }
+    }
+
     this.error = '';
     this.saved = true;
     this.accountSettings.currentPassword = '';
     this.accountSettings.newPassword = '';
     this.accountSettings.confirmPassword = '';
-    
+
     setTimeout(() => {
       this.saved = false;
     }, 3000);

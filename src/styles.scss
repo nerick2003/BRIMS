@@ -64,6 +64,10 @@
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.1);
 
+  /* Skeleton loaders */
+  --skeleton-base: #e2e8f0;
+  --skeleton-highlight: #f8fafc;
+
   /* Notification bell icon: black in light theme */
   --notification-icon-filter: brightness(0);
 
@@ -121,6 +125,9 @@
   --color-input-placeholder: #64748b;
   --color-select-border: #cbd5e1;
   --color-select-border-hover: #94a3b8;
+
+  --skeleton-base: #334155;
+  --skeleton-highlight: #475569;
 
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -507,11 +514,36 @@ a {
   box-shadow: none;
 }
 
-/* Blur the entire app background whenever a SweetAlert2 modal is open */
-body.swal2-shown > *:not(.swal2-container) {
+/* Blur the entire app background whenever a SweetAlert2 modal is open (not side toasts) */
+body.swal2-shown:not(.swal2-toast-shown) > *:not(.swal2-container) {
   filter: blur(4px);
   -webkit-filter: blur(4px);
   transition: filter 0.2s ease, -webkit-filter 0.2s ease;
+}
+
+.swal2-popup.swal2-toast {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.swal2-popup.swal2-toast .swal2-title {
+  font-size: 1rem;
+  margin: 0 0 0.15rem;
+  color: var(--color-text);
+}
+
+.swal2-popup.swal2-toast .swal2-html-container {
+  font-size: 0.8125rem;
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+[data-theme='dark'] {
+  --swal2-background: var(--color-bg-card);
+  --swal2-color: var(--color-text);
 }
 
 /* Dropdown / select - minimalist field; !important beats encapsulated component .form-control rules */

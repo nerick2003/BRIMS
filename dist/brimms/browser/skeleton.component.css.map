@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["src/app/shared/skeleton/skeleton.component.ts"],
-  "sourcesContent": ["\n      .skeleton {\n        display: inline-block;\n        vertical-align: middle;\n        max-width: 100%;\n        background: linear-gradient(\n          90deg,\n          var(--skeleton-base) 0%,\n          var(--skeleton-highlight) 50%,\n          var(--skeleton-base) 100%\n        );\n        background-size: 200% 100%;\n        animation: skeleton-shimmer 1.25s ease-in-out infinite;\n        border-radius: 6px;\n      }\n\n      .skeleton--circle {\n        border-radius: 50%;\n        flex-shrink: 0;\n      }\n\n      .skeleton--button {\n        border-radius: 8px;\n      }\n\n      @keyframes skeleton-shimmer {\n        0% {\n          background-position: 200% 0;\n        }\n        100% {\n          background-position: -200% 0;\n        }\n      }\n\n      @media (prefers-reduced-motion: reduce) {\n        .skeleton {\n          animation: none;\n          background: var(--skeleton-base);\n        }\n      }\n    "],
-  "mappings": ";AACM,CAAA;AACE,WAAA;AACA,kBAAA;AACA,aAAA;AACA;IAAA;MAAA,KAAA;MAAA,IAAA,iBAAA,EAAA;MAAA,IAAA,sBAAA,GAAA;MAAA,IAAA,iBAAA;AAMA,mBAAA,KAAA;AACA,aAAA,iBAAA,MAAA,YAAA;AACA,iBAAA;;AAGF,CAAA;AACE,iBAAA;AACA,eAAA;;AAGF,CAAA;AACE,iBAAA;;AAGF,WAbE;AAcA;AACE,yBAAA,KAAA;;AAEF;AACE,yBAAA,MAAA;;;AAIJ,QAAA,wBAAA;AACE,GAlCF;AAmCI,eAAA;AACA,gBAAA,IAAA;;;",
-  "names": []
-}

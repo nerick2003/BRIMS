@@ -19,6 +19,7 @@ BRIMS is a web-based **Barangay Resident Information Management System** built w
 - [Project Structure](#project-structure)
 - [Database & Firebase](#database--firebase)
 - [Environment Configuration](#environment-configuration)
+- [Deployment](#deployment)
 - [Notes & Next Steps](#notes--next-steps)
 
 ---
@@ -27,21 +28,26 @@ BRIMS is a web-based **Barangay Resident Information Management System** built w
 
 ### Authentication & Access
 - **Role-based login** – Three roles: **Admin**, **Staff**, and **Resident**
-- **Forgot/Reset password** flows
-- **Route guards** – Protect staff-only and resident-only areas; admin-only routes are restricted to Admin (see [Users and Roles](#users-and-roles)).
+- **Bcrypt password verification** – Passwords in Firestore are stored hashed; legacy plaintext demo passwords are upgraded automatically on successful login
+- **Forgot/Reset password** flows (reset links via the notification backend when configured)
+- **Route guards** – Protect staff-only and resident-only areas; admin-only routes are restricted to Admin (see [Users and Roles](#users-and-roles))
 
 ### Global In-App Notifications
 - **Notification bell in the top bar** with unread badge count
 - **In-app notification panel** listing recent success, error, warning, and info messages
 - **Mark-as-read and mark-all-as-read** interactions so staff and residents can quickly clear notifications
-- **Context-aware visibility** – hidden on focused/full-screen flows such as login, password reset, settings, QR scanner, household map, and certain detail pages to keep those screens clean
+- **Hybrid delivery**
+  - **Firestore (`portalNotifications`)** – Cross-device bell alerts for certificate workflow events (e.g. new pending request for staff; approved/declined for residents), keyed by staff audience or resident barangay ID
+  - **Local session cache** – Ephemeral toasts and staff deduplication state; merged with Firestore rows in `NotificationService`
+- **Targeting** – Staff/admin by role; residents by barangay resident ID (`BRGY-…`), with optional deep links to request detail routes
+- **Context-aware visibility** – Hidden on focused/full-screen flows such as login, password reset, settings, QR scanner, household map, and certain detail pages to keep those screens clean
 
 ### Users and Roles
 
 | Role | Portal | What they can do and access |
 |------|--------|----------------------------|
 | **Admin** | Staff (Admin area `/admin`) | **Full access:** Dashboard, My Profile, QR Scanner, Requests (view & approve), Residents (list, add, edit, profiles), Households (list, map, add, edit, detail), Reports, **Users & Roles**, **SMS & Email**, **Audit Log**, **Archives**, **Settings**. Can manage user accounts, role assignments, broadcasts, and system settings. |
-| **Staff** | Staff (Staff area `/staff`) | **Limited staff access:** Dashboard, My Profile, QR Scanner, Requests (view & process), Residents (list, add, edit, profiles), Households (list, map, add, edit, detail), Reports. **Cannot access:** Users & Roles, SMS & Email, Audit Log, Archives, Settings. |
+| **Staff** | Staff (Staff area `/staff`) | **Limited staff access:** Dashboard, My Profile, QR Scanner, Requests (view & process), Residents (list, add, edit, profiles), Households (list, map, add, edit, detail), Reports, **Staff Settings**. **Cannot access:** Users & Roles, SMS & Email, Audit Log, Archives, Admin Settings. |
 | **Resident** | Resident (`/resident`) | **Resident-only:** Dashboard, My Profile, Request Certificate, My Requests, Resident Reports, Settings. Can view own profile, submit and track certificate requests, and update own profile/settings. |
 
 **Role permissions (editable in Admin → Users & Roles):**
@@ -65,7 +71,7 @@ Shared by both Admin and Staff:
   - Generate certificates (e.g., residency, indigency)
 - **Households**
   - List, add, edit, and view household details
-  - **Household map** view for geographic visualization (if configured)
+  - **Household map** view for geographic visualization (Leaflet)
 - **Reports**
   - Staff reporting views (population, household, age/sex breakdowns, etc.)
 - **Requests**
@@ -81,10 +87,12 @@ Shared by both Admin and Staff:
 - **Archives** – View and restore archived residents, households, certificate requests, and staff accounts
   - Filter by search terms, purok, date ranges, status, and role
   - Restore archived items back to active status
-- **SMS & Email** – SMS broadcast (Twilio) and email broadcast (Nodemailer) to residents
+- **SMS & Email** – SMS broadcast (Twilio) and email broadcast (Resend/SMTP via backend) to residents
 - **Users & Roles** – Manage user accounts and role assignments (Admin/Staff): create Admin/Staff logins, search and filter by role/status, activate/deactivate accounts, archive Admin/Staff users to the **Archives** module, and edit role descriptions and permissions
 - **Audit Log** – Track key actions for accountability and traceability
-- **Settings** – Staff-side configuration and preferences
+- **Settings** – Admin-side configuration and preferences (`/admin/settings`)
+
+**Staff-only settings:** `/staff/settings` (separate from admin settings).
 
 ### Resident Portal
 - **Dashboard**
@@ -99,6 +107,11 @@ Shared by both Admin and Staff:
   - View reports relevant to logged-in resident
 - **Settings**
   - Manage basic profile and preferences
+
+### Public routes
+- **Login** (`/login`), **Forgot password**, **Reset password**
+- **Contact** (`/contact`) – Public contact page
+- **404** – Catch-all not-found page for invalid routes
 
 ---
 
@@ -137,6 +150,8 @@ Change these passwords in production (Users & Roles / resident profile). Passwor
 npm install
 ```
 
+`postinstall` runs `scripts/ensure-config.js`, which copies `src/assets/config.example.json` → `config.json` if missing.
+
 ### Run the development server
 
 ```bash
@@ -147,13 +162,24 @@ Then open `http://localhost:4200` in your browser.
 
 > **Note:** The QR Scanner feature requires camera access. Allow camera permissions when prompted.
 
+### Other npm scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run build` | Production build → `dist/brimms` |
+| `npm run watch` | Development build with watch mode |
+| `npm run api` | Optional JSON Server demo API on port 3000 |
+| `npm run seed:firestore` | Seed demo users and sample data into Firestore |
+| `npm run docs:diagrams` | Generate role-flow HTML/diagram assets |
+| `npm run docs:tech-stack-pdf` | Generate tech-stack PDF documentation |
+
 ### Build for production
 
 ```bash
 npm run build
 ```
 
-The production build will be generated in `dist/brimms`.
+The production build is output to `dist/brimms/browser` (Firebase Hosting serves this folder).
 
 ---
 
@@ -161,44 +187,61 @@ The production build will be generated in `dist/brimms`.
 
 This project ships with a minimal backend (in the `backend` folder) that provides REST APIs for:
 
-- Sending **single SMS** and **bulk SMS** (via Twilio)
-- Sending **single email** and **bulk email** (via SMTP/Nodemailer)
+- Sending **single SMS** and **bulk SMS** (Twilio or demo mode)
+- Sending **single email** and **bulk email** (Resend, SMTP, or demo mode)
 - Listing recent notifications (in-memory, demo only)
+
+Provider selection is **environment-only** — see **[backend/MIGRATION.md](backend/MIGRATION.md)** for demo → production steps.
+
+| Channel | `*_PROVIDER` values | Credentials |
+|---------|---------------------|-------------|
+| SMS | `demo`, `twilio` | `TWILIO_*` when using `twilio` |
+| Email | `demo`, `resend`, `smtp`, `auto` | `RESEND_*` or `SMTP_*` |
+
+**Local demo:** `SMS_PROVIDER=demo` and `EMAIL_PROVIDER=demo` (logs to console).
 
 ### Backend setup
 
 ```bash
 cd backend
 npm install
-cp .env.example .env   # fill in Twilio + SMTP credentials
+cp .env.example .env   # fill in provider + credentials
 npm run dev            # or: npm start
 ```
 
-The backend will run on `http://localhost:4000` by default. Make sure the Angular app points to this URL for notification-related APIs.
+The backend runs on `http://localhost:4000` by default. Set the same URL as `apiBaseUrl` in `src/assets/config.json`.
+
+Full API reference: **[backend/README.md](backend/README.md)**.
 
 ---
 
 ## Tech Stack
 
-- **Angular 21** – Standalone components, lazy-loaded routes
+- **Angular 21** – Standalone components, lazy-loaded routes, signals where applicable
 - **Angular CDK** – Accessibility and UI primitives
+- **AngularFire + Firebase Firestore** – Primary data store
 - **SCSS** – Global styles and component-level styling
 - **Route guards** – Auth and role-based access control
+- **bcryptjs** – Password hashing and verification
 - **@zxing/ngx-scanner** (v21) – QR code scanning using camera
 - **Chart.js + ng2-charts** – Charts and data visualization (reports, dashboard)
 - **Leaflet** – Maps for household/geographic views
-- **Firebase (AngularFire) + Firestore** – Primary data store used by the app
-- **Node.js + Express** – Lightweight notification backend (`backend`)
-- **Twilio** – SMS provider
-- **Nodemailer + SMTP** – Email provider
+- **SweetAlert2** – Dialogs and confirmations
+- **html2canvas + jsPDF** – Certificate export/print helpers
+- **Node.js + Express** – Notification backend (`backend/`)
+- **Twilio** – SMS provider (production)
+- **Resend / Nodemailer + SMTP** – Email providers (production)
+
 ---
 
 ## What's New
 
-- **Global notifications center** – Added a top-bar notification bell with an in-app notifications panel, unread badge, and mark-all-as-read behavior, available across staff and resident layouts (but hidden on focused pages like login, settings, QR scanner, and the full-screen household map).
-- **Improved Requests management** – The main Requests table now shows only active (non-archived) requests, and Admins can archive completed or irrelevant requests, which are then managed from the **Archives** section.
-- **Richer Users & Roles management** – Admins can add Admin/Staff accounts with validation, toggle user status, archive Admin/Staff accounts, and maintain role descriptions and permission lists via a dedicated modal.
-- **UI/UX refinements** – Polished layout and responsive behavior for admin pages (including Requests and Users & Roles) to reduce double scrollbars and improve spacing on smaller screens.
+- **Firestore-backed notification bell** – Certificate request events (new pending, approved, declined) sync via the `portalNotifications` collection so staff and residents see alerts across devices; local storage still handles session-only toasts and deduplication.
+- **Resend email provider** – Backend supports `EMAIL_PROVIDER=resend` (recommended on Railway) in addition to SMTP and demo mode; see `backend/MIGRATION.md`.
+- **Bcrypt authentication** – Login verifies hashed passwords; legacy plaintext entries are re-hashed on successful login.
+- **Staff settings route** – Staff use `/staff/settings`; admin system settings remain at `/admin/settings`.
+- **Public contact page** – `/contact` for barangay inquiries outside the portals.
+- **Archives & Requests** – Active requests list excludes archived items; admins archive from Requests and restore from Archives.
 
 ---
 
@@ -211,14 +254,14 @@ src/app/
 ├── guards/
 │   ├── admin.guard.ts      # Admin-only route protection
 │   ├── auth.guard.ts       # Requires logged-in user
-│   └── role.guard.ts       # Role-based access (staff vs resident)
+│   └── role.guard.ts       # Role-based access (admin / staff / resident)
 ├── layouts/
 │   ├── admin-layout/       # Admin shell (top bar + sidebar, admin-only sections)
-│   ├── staff-layout/       # Shared staff shell for day‑to‑day operations
+│   ├── staff-layout/       # Shared staff shell for day-to-day operations
 │   └── resident-layout/    # Layout for Resident portal
 ├── pages/
-│   ├── login, forgot-password, reset-password
-│   ├── staff-dashboard, staff-profile
+│   ├── login, forgot-password, reset-password, contact, not-found
+│   ├── staff-dashboard, staff-profile, staff-settings
 │   ├── residents-list, add-resident, resident-profile
 │   ├── households, add-household, edit-household, household-detail, household-map
 │   ├── reports, requests, request-detail
@@ -229,33 +272,38 @@ src/app/
 │   ├── my-requests, resident-request-detail, resident-reports, resident-settings
 │   └── (each as .ts, .html, .scss)
 ├── services/
-│   ├── auth.service.ts                     # Login / current user
-│   ├── data.service.ts                     # Core data layer (uses injected database service)
+│   ├── auth.service.ts                     # Login, session, password change
+│   ├── password.service.ts                 # Bcrypt hash/verify
+│   ├── data.service.ts                     # Core data layer (Firestore via IDatabaseService)
 │   ├── database.interface.ts               # IDatabaseService abstraction
-│   ├── local-storage-database.service.ts   # Local storage implementation (legacy/demo)
 │   ├── firebase-database.service.ts        # Firestore implementation (active)
 │   ├── json-server-database.service.ts     # JSON Server integration (optional/demo)
+│   ├── firestore-portal-notifications.service.ts  # portalNotifications collection
 │   ├── audit-log.service.ts                # Audit trail for key actions
-│   ├── notification.service.ts             # In‑app notifications
-│   ├── notification-type-label.pipe.ts     # Human‑friendly labels for notification types
-│   ├── sms.service.ts, email.service.ts    # SMS / email notification clients
+│   ├── notification.service.ts             # In-app bell (local + Firestore merge)
+│   ├── notification-type-label.pipe.ts     # Human-friendly notification type labels
+│   ├── sms.service.ts, email.service.ts    # HTTP clients to notification backend
+│   ├── api-config.service.ts               # Loads apiBaseUrl from config.json
+│   ├── alert.service.ts                    # SweetAlert2 wrappers
 │   ├── qr-code.service.ts                  # QR generation / helper logic
 │   ├── theme.service.ts                    # Light/dark theme + tokens
-│   ├── certificate-generator.service.ts    # Certificate text/format helpers
+│   ├── certificate-generator.service.ts      # Certificate text/format helpers
 │   └── error-handler.service.ts            # Centralized error handling
-├── app.component.ts
+├── app.component.ts                        # Root shell + notification bell wiring
 ├── app.config.ts
 └── app.routes.ts
 ```
 
 - **`src/styles.scss`** – Global variables, color tokens, utility classes
+- **`scripts/`** – Firestore seed, config bootstrap, documentation generators
 
 ### Backend (`backend/`)
 
 ```text
 backend/
 ├── server.js        # Express app: SMS/email APIs
-├── .env.example     # Twilio + SMTP template
+├── .env.example     # Provider + Twilio / Resend / SMTP template
+├── MIGRATION.md     # Demo → production provider migration
 ├── package.json
 └── README.md
 ```
@@ -269,6 +317,7 @@ BRIMS is **Firebase integrated** and uses **Firestore** as its primary datastore
 - **Firebase wiring**: `src/app/app.config.ts` loads Firebase from `src/assets/config.json` (gitignored) and provides Firestore.
 - **Active database implementation**: the app binds `DATABASE_SERVICE` to `FirebaseDatabaseService` (via `IDatabaseService`), so reads/writes go to Firestore.
 - **Swappable data layer**: the `IDatabaseService` abstraction remains, so you can swap implementations (e.g. JSON Server) if needed.
+- **Portal notifications**: the `portalNotifications` collection stores cross-device bell documents (`audience: staff | resident`, read state, optional `linkRequestId`).
 
 ---
 
@@ -284,10 +333,11 @@ Firebase and backend URLs are **not** stored in `environment.ts` (keeps secrets 
    ```
    (`npm install` also creates `config.json` from the example if it is missing.)
 2. Fill in values from [Firebase Console](https://console.firebase.google.com/) → Project settings → Your apps → Web app.
+3. Set `apiBaseUrl` to your notification backend (e.g. `http://localhost:4000` locally).
 
 ```json
 {
-  "apiBaseUrl": "https://your-backend.example.com",
+  "apiBaseUrl": "http://localhost:4000",
   "firebase": {
     "apiKey": "...",
     "authDomain": "...",
@@ -308,10 +358,27 @@ Firebase and backend URLs are **not** stored in `environment.ts` (keeps secrets 
 
 ---
 
+## Deployment
+
+### Frontend (Firebase Hosting)
+
+```bash
+npm run build
+firebase deploy --only hosting
+```
+
+`firebase.json` serves `dist/brimms/browser` with SPA rewrites to `index.html`. Ensure production `assets/config.json` is present in the build output (copy into `dist/brimms/browser/assets/` after build if not bundled automatically).
+
+### Backend (Node.js)
+
+Firebase Hosting does **not** run the Express API. Deploy `backend/` to a Node host (Railway, Render, etc.) and set `apiBaseUrl` in the frontend config. See **[backend/README.md](backend/README.md)** for Railway/Render steps and `CORS_ORIGIN`.
+
+---
+
 ## Notes & Next Steps
 
-- For production, make sure your **Firebase project** (Firestore rules, indexes, and allowed origins) is correctly configured for your deployment.
-- Secure the backend APIs with proper **authentication** and **authorization**.
-- Configure proper **environment files** (`environment.prod.ts`) or `assets/config.json` to point to your production backend URL (SMS/email).
-- Implement proper password hashing for user authentication (currently accepts any password for demo purposes).
-- Add data export/import functionality for backups and migrations.
+- Configure **Firestore security rules** and indexes for production, including `portalNotifications` read/write rules appropriate to staff and resident audiences.
+- Secure backend APIs with **authentication** and **authorization** before exposing publicly (endpoints are open in development).
+- Point production `config.json` at your deployed notification backend URL.
+- Consider data export/import tooling for backups and migrations.
+- Review and rotate demo credentials after seeding in any shared environment.
